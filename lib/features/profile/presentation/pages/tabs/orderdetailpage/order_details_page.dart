@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:node_app/features/orders/presentation/providers/wholesale_order_providers.dart';
 import 'package:node_app/features/profile/domain/entities/wholesale_order.dart';
 import 'package:node_app/core/utils/responsive_size.dart';
 import 'package:node_app/features/profile/presentation/providers/pdf_providers.dart';
@@ -31,12 +32,21 @@ class OrderDetailsPage extends ConsumerWidget {
     final primary = theme.primaryColor;
     final dateFormat = DateFormat('MMMM dd, yyyy · HH:mm');
 
+    // 🔄 Reactive Order Lookup: Ensures UI updates when status changes in the background
+    final ordersAsync = ref.watch(wholesaleOrdersProvider);
+    final currentOrder =
+        ordersAsync.whenOrNull(
+          data: (list) =>
+              list.firstWhere((o) => o.id == order.id, orElse: () => order),
+        ) ??
+        order;
+
     // Fetch PDFs to find the linked one
     final pdfsAsync = ref.watch(userPdfsProvider);
     final linkedPdf = pdfsAsync.whenOrNull(
       data: (docs) {
-        if (order.pdfId == null) return null;
-        final matches = docs.where((doc) => doc.id == order.pdfId);
+        if (currentOrder.pdfId == null) return null;
+        final matches = docs.where((doc) => doc.id == currentOrder.pdfId);
         return matches.isNotEmpty ? matches.first : null;
       },
     );
@@ -78,7 +88,7 @@ class OrderDetailsPage extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Order #${order.id.split('-').first}...',
+                              'Order #${currentOrder.id.split('-').first}...',
                               style: GoogleFonts.outfit(
                                 fontSize: 24.sp,
                                 fontWeight: FontWeight.w900,
@@ -87,7 +97,7 @@ class OrderDetailsPage extends ConsumerWidget {
                             ),
                             SizedBox(height: 4.h),
                             Text(
-                              dateFormat.format(order.date),
+                              dateFormat.format(currentOrder.date),
                               style: TextStyle(
                                 fontSize: 12.sp,
                                 color: onSurface.withOpacity(0.5),
@@ -98,13 +108,13 @@ class OrderDetailsPage extends ConsumerWidget {
                         ),
                       ),
                       SizedBox(width: 12.w),
-                      OrderStatusBadge(status: order.status),
+                      OrderStatusBadge(status: currentOrder.status),
                     ],
                   ),
                   SizedBox(height: 32.h),
 
                   // ── Product Cards ──────────────────────────────────────
-                  ...order.entries.map((entry) {
+                  ...currentOrder.entries.map((entry) {
                     return OrderProductEntryCard(entry: entry);
                   }).toList(),
 
@@ -168,11 +178,14 @@ class OrderDetailsPage extends ConsumerWidget {
 
                   // ── Summary Section ──────────────────────────────────────────
                   SizedBox(height: 40.h),
-                  OrderSummaryRow(label: 'Items', value: '${order.totalItems}'),
+                  OrderSummaryRow(
+                    label: 'Items',
+                    value: '${currentOrder.totalItems}',
+                  ),
                   SizedBox(height: 12.h),
                   OrderSummaryRow(
                     label: 'Total Units',
-                    value: '${order.totalUnits} Units',
+                    value: '${currentOrder.totalUnits} Units',
                   ),
                   Padding(
                     padding: EdgeInsets.symmetric(vertical: 20.h),
@@ -196,7 +209,7 @@ class OrderDetailsPage extends ConsumerWidget {
                         child: FittedBox(
                           fit: BoxFit.scaleDown,
                           child: Text(
-                            'UGX ${order.totalAmount.toStringAsFixed(0)}',
+                            'UGX ${currentOrder.totalAmount.toStringAsFixed(0)}',
                             style: GoogleFonts.outfit(
                               fontSize: 20.sp,
                               fontWeight: FontWeight.w900,
@@ -213,7 +226,7 @@ class OrderDetailsPage extends ConsumerWidget {
             ),
           ),
           // ── Action Buttons Bottom ──────────────────────────────────────────
-          OrderDetailsActions(order: order),
+          OrderDetailsActions(order: currentOrder),
         ],
       ),
     );

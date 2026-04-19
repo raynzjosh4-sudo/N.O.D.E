@@ -6,6 +6,7 @@ import '../../domain/repositories/bulk_order_repository.dart';
 import '../../data/repositories/order_repository_impl.dart';
 import '../../domain/repositories/order_repository.dart';
 import '../../../auth/presentation/providers/user_providers.dart';
+import '../../../profile/presentation/providers/profile_providers.dart';
 import '../../../profile/domain/entities/wholesale_order.dart';
 import '../../../profile/domain/entities/draft_order.dart';
 import '../../../inventory/presentation/providers/inventory_notifier.dart';

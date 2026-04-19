@@ -15,6 +15,8 @@ class OrdersTable extends Table {
   BoolColumn get isDraft => boolean().withDefault(const Constant(false))();
   
   TextColumn get pdfId => text().nullable()(); // Link to GeneratedPdfsTable
+  TextColumn get productId => text().nullable()(); // Direct lookup for button state
+  TextColumn get supplierId => text().nullable()(); // For supplier-specific logic
   
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();

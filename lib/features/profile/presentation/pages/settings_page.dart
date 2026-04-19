@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:node_app/core/utils/responsive_size.dart';
+import 'package:node_app/features/showcase/presentation/services/node_toast_manager.dart';
+import 'package:node_app/features/showcase/presentation/widgets/node_toast.dart';
+import 'package:node_app/features/auth/google/service.dart';
+import 'package:node_app/features/profile/presentation/pages/tabs/settingstab/pages/legal_terms_page.dart';
 
 class SettingsPage extends StatelessWidget {
   SettingsPage({super.key});
@@ -16,7 +21,11 @@ class SettingsPage extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, color: onSurface, size: 20.w),
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: onSurface,
+            size: 20.w,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -37,56 +46,77 @@ class SettingsPage extends StatelessWidget {
             context,
             'Profile Information',
             Icons.person_outline_rounded,
-            onTap: () {},
+            onTap: () => NodeToastManager.show(
+              context,
+              title: 'Coming Soon',
+              message: 'Profile management is currently under maintenance.',
+            ),
           ),
-          _buildSettingTile(
-            context,
-            'Security & Password',
-            Icons.lock_outline_rounded,
-            onTap: () {},
-          ),
-          SizedBox(height: 24.h),
+
+          SizedBox(height: 12.h),
           _buildSectionHeader('Preferences'),
           _buildSettingTile(
             context,
             'Notifications',
             Icons.notifications_none_rounded,
-            onTap: () {},
+            onTap: () => NodeToastManager.show(
+              context,
+              title: 'Coming Soon',
+              message: 'Notification preferences are being optimized.',
+            ),
           ),
-          _buildSettingTile(
-            context,
-            'Language',
-            Icons.language_rounded,
-            onTap: () {},
-            trailing: 'English',
-          ),
-          SizedBox(height: 24.h),
+
+          SizedBox(height: 12.h),
           _buildSectionHeader('Support'),
           _buildSettingTile(
             context,
             'Help Center',
             Icons.help_outline_rounded,
-            onTap: () {},
+            onTap: () => NodeToastManager.show(
+              context,
+              title: 'Coming Soon',
+              message: 'Help Center is being prepared for the N.O.D.E live release.',
+            ),
           ),
           _buildSettingTile(
             context,
             'Terms of Service',
             Icons.description_outlined,
-            onTap: () {},
+            onTap: () => LegalTermsPage.show(
+              context,
+              termId: 'tos',
+              title: 'Terms of Service',
+            ),
           ),
           _buildSettingTile(
             context,
             'Privacy Policy',
             Icons.privacy_tip_outlined,
-            onTap: () {},
+            onTap: () => LegalTermsPage.show(
+              context,
+              termId: 'privacy',
+              title: 'Privacy Policy',
+            ),
           ),
           SizedBox(height: 32.h),
           _buildSettingTile(
             context,
-            'Sign Out',
+            'Logout',
             Icons.logout_rounded,
-            onTap: () {
-              // Handle sign out
+            onTap: () async {
+              try {
+                debugPrint('👉 [UI] Logout button tapped.');
+                final authService = AuthService();
+                await authService.signOut();
+                if (context.mounted) {
+                  debugPrint(
+                    '✅ [UI] Logout complete. Returning to Home Screen.',
+                  );
+                  context.go('/home');
+                }
+              } catch (e) {
+                debugPrint('❌ [Settings] Logout failed: $e');
+              }
             },
             isDestructive: true,
           ),
@@ -130,9 +160,15 @@ class SettingsPage extends StatelessWidget {
         child: Container(
           padding: EdgeInsets.all(16.w),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.04),
+            color: isDestructive
+                ? theme.colorScheme.error.withOpacity(0.08)
+                : color.withOpacity(0.04),
             borderRadius: BorderRadius.circular(16.r),
-            border: Border.all(color: color.withOpacity(0.05)),
+            border: Border.all(
+              color: isDestructive
+                  ? theme.colorScheme.error.withOpacity(0.15)
+                  : color.withOpacity(0.05),
+            ),
           ),
           child: Row(
             children: [

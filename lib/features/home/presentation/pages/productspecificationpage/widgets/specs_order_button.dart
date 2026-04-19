@@ -4,8 +4,15 @@ import 'package:node_app/core/utils/responsive_size.dart';
 
 class SpecsOrderButton extends StatelessWidget {
   final VoidCallback onTap;
+  final String label;
+  final Color? backgroundColor;
 
-  SpecsOrderButton({super.key, required this.onTap});
+  const SpecsOrderButton({
+    super.key,
+    required this.onTap,
+    this.label = 'Order Now',
+    this.backgroundColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -13,15 +20,15 @@ class SpecsOrderButton extends StatelessWidget {
 
     return SizedBox(
       width: double.infinity,
-      height: 30.h,
+      height: 45.h,
       child: ElevatedButton(
         onPressed: onTap,
         style: ElevatedButton.styleFrom(
-          backgroundColor: theme.primaryColor,
-          foregroundColor: Colors.white,
+          backgroundColor: backgroundColor ?? theme.colorScheme.primary,
+          foregroundColor: theme.colorScheme.onPrimary,
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.zero,
+            borderRadius: BorderRadius.circular(12.r),
           ),
           textStyle: GoogleFonts.outfit(
             fontSize: 16.sp,
@@ -29,7 +36,7 @@ class SpecsOrderButton extends StatelessWidget {
             letterSpacing: 0.5,
           ),
         ),
-        child: const Text('Order Now'),
+        child: Text(label),
       ),
     );
   }

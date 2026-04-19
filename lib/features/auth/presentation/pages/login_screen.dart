@@ -1,20 +1,69 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:node_app/core/error/failure.dart';
+import 'package:node_app/features/auth/presentation/providers/auth_providers.dart';
 import 'package:node_app/core/utils/responsive_size.dart';
+import 'package:node_app/features/profile/presentation/pages/tabs/settingstab/pages/legal_terms_page.dart';
+import 'package:flutter/gestures.dart';
 import 'package:node_app/features/auth/presentation/widgets/forgot_password_sheet.dart';
+import 'package:node_app/features/showcase/presentation/services/node_toast_manager.dart';
+import 'package:node_app/features/showcase/presentation/widgets/node_toast.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
-class LoginScreen extends StatefulWidget {
-  LoginScreen({super.key});
+class LoginScreen extends ConsumerStatefulWidget {
+  const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoading = false;
+
+  Future<void> _handleLogin() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      NodeToastManager.show(
+        context,
+        title: 'Missing Information',
+        message: 'Please fill in all fields to continue.',
+        status: NodeToastStatus.error,
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final authService = ref.read(authServiceProvider);
+      await authService.signInWithEmail(email, password);
+
+      if (mounted) {
+        context.go('/home');
+      }
+    } catch (e) {
+      if (mounted) {
+        final failure = Failure.fromException(e);
+        NodeToastManager.show(
+          context,
+          title: 'Login Failed',
+          message: failure.toFriendlyMessage(),
+          status: NodeToastStatus.error,
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -84,8 +133,8 @@ class _LoginScreenState extends State<LoginScreen> {
               // 🏷️ BRANDING
               Row(
                 children: [
-                  Image.asset(
-                    'assets/icon/nodeicon.png',
+                  SvgPicture.asset(
+                    'assets/icon/nodeicon.svg',
                     width: 48.w,
                     height: 48.h,
                   ),
@@ -177,12 +226,11 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               SizedBox(height: 32.h),
 
-              // 🚀 LOGIN BUTTON
               SizedBox(
                 width: double.infinity,
                 height: 48.h,
                 child: ElevatedButton(
-                  onPressed: () => context.go('/home'),
+                  onPressed: _isLoading ? null : _handleLogin,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: theme.colorScheme.primary,
                     foregroundColor: theme.colorScheme.onPrimary,
@@ -190,16 +238,73 @@ class _LoginScreenState extends State<LoginScreen> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12.r),
                     ),
+                    disabledBackgroundColor: theme.colorScheme.primary
+                        .withOpacity(0.5),
                   ),
-                  child: Text(
-                    'Log In',
-                    style: GoogleFonts.outfit(
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+                  child: _isLoading
+                      ? SizedBox(
+                          height: 20.h,
+                          width: 20.w,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: theme.colorScheme.onPrimary,
+                          ),
+                        )
+                      : Text(
+                          'Log In',
+                          style: GoogleFonts.outfit(
+                            fontSize: 15.sp,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                 ),
               ),
+              SizedBox(height: 16.h),
+              // ⚖️ LEGAL FOOTER
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24.w),
+                child: Text.rich(
+                  TextSpan(
+                    text: 'By logging in, you agree to our ',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 10.sp,
+                      color: theme.colorScheme.onSurface.withOpacity(0.5),
+                      height: 1.5,
+                    ),
+                    children: [
+                      TextSpan(
+                        text: 'Terms of Service',
+                        style: TextStyle(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = () => LegalTermsPage.show(
+                            context,
+                            termId: 'tos',
+                            title: 'Terms of Service',
+                          ),
+                      ),
+                      const TextSpan(text: ' & '),
+                      TextSpan(
+                        text: 'Privacy Policy',
+                        style: TextStyle(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = () => LegalTermsPage.show(
+                            context,
+                            termId: 'privacy',
+                            title: 'Privacy Policy',
+                          ),
+                      ),
+                    ],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              SizedBox(height: 8.h),
               SizedBox(height: 24.h),
             ],
           ),

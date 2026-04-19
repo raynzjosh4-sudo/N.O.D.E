@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:node_app/core/utils/responsive_size.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:node_app/features/orders/presentation/providers/bulk_order_providers.dart';
+import 'package:node_app/features/orders/presentation/providers/draft_order_providers.dart';
 import 'package:node_app/features/profile/domain/entities/draft_order.dart';
 
 /// A bottom sheet that lets the user pick from their saved drafts
@@ -57,7 +57,7 @@ class _SavedItemPickerState extends ConsumerState<SavedItemPicker> {
     final onSurface = theme.colorScheme.onSurface;
     final primary = theme.primaryColor;
 
-    final savedOrdersAsync = ref.watch(userDraftsProvider);
+    final savedOrdersAsync = ref.watch(draftOrdersProvider);
 
     return savedOrdersAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),

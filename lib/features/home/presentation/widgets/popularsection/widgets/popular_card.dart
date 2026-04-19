@@ -8,10 +8,7 @@ import 'package:node_app/features/home/presentation/pages/productspecificationpa
 class PopularCard extends StatelessWidget {
   final Product product;
 
-  const PopularCard({
-    super.key,
-    required this.product,
-  });
+  const PopularCard({super.key, required this.product});
 
   @override
   Widget build(BuildContext context) {
@@ -93,14 +90,19 @@ class PopularCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(
-                        price,
-                        style: GoogleFonts.outfit(
-                          fontSize: 15.sp,
-                          fontWeight: FontWeight.w800,
-                          color: theme.colorScheme.onSurface,
+                      Flexible(
+                        child: Text(
+                          price,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.outfit(
+                            fontSize: 15.sp,
+                            fontWeight: FontWeight.w800,
+                            color: theme.colorScheme.onSurface,
+                          ),
                         ),
                       ),
+                      SizedBox(width: 4.w),
                       // Small Cart Button
                       Container(
                         padding: EdgeInsets.all(4.w),

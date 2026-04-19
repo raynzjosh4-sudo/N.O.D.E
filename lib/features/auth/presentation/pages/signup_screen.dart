@@ -1,20 +1,92 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:node_app/core/error/failure.dart';
+import 'package:node_app/features/auth/presentation/providers/auth_providers.dart';
 import 'package:node_app/core/utils/responsive_size.dart';
+import 'package:node_app/features/auth/presentation/providers/auth_state_provider.dart';
+import 'package:node_app/features/showcase/presentation/services/node_toast_manager.dart';
+import 'package:node_app/features/showcase/presentation/widgets/node_toast.dart';
+import 'package:node_app/features/auth/presentation/widgets/email_otp_sheet.dart';
+import 'package:node_app/features/profile/presentation/pages/tabs/settingstab/pages/legal_terms_page.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
-class SignupScreen extends StatefulWidget {
-  SignupScreen({super.key});
+class SignupScreen extends ConsumerStatefulWidget {
+  const SignupScreen({super.key});
 
   @override
-  State<SignupScreen> createState() => _SignupScreenState();
+  ConsumerState<SignupScreen> createState() => _SignupScreenState();
 }
 
-class _SignupScreenState extends State<SignupScreen> {
+class _SignupScreenState extends ConsumerState<SignupScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _agreeToTerms = false;
+  bool _isLoading = false;
+
+  Future<void> _handleSignup() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      NodeToastManager.show(
+        context,
+        title: 'Missing Fields',
+        message: 'Email and password are required to create an account.',
+        status: NodeToastStatus.error,
+      );
+      return;
+    }
+
+    if (!_agreeToTerms) {
+      NodeToastManager.show(
+        context,
+        title: 'Terms Required',
+        message: 'Please agree to the Terms and Conditions to proceed.',
+        status: NodeToastStatus.error,
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final authService = ref.read(authServiceProvider);
+      final response = await authService.signUpWithEmail(email, password);
+
+      if (mounted && response.user != null) {
+        // 🔢 Show the Magic Code (OTP) entry sheet with the specific User ID
+        final isVerified = await EmailOtpSheet.show(
+          context,
+          email,
+          response.user!.id,
+        );
+
+        // If verified successfully, go to Home
+        if (isVerified == true && mounted) {
+          debugPrint('🏁 [Signup] Verification complete. Navigating home...');
+          context.go('/home');
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        final failure = Failure.fromException(e);
+        NodeToastManager.show(
+          context,
+          title: 'Signup Failed',
+          message: failure.toFriendlyMessage(),
+          status: NodeToastStatus.error,
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -84,8 +156,8 @@ class _SignupScreenState extends State<SignupScreen> {
               // 🏷️ BRANDING
               Row(
                 children: [
-                  Image.asset(
-                    'assets/icon/nodeicon.png',
+                  SvgPicture.asset(
+                    'assets/icon/nodeicon.svg',
                     width: 48.w,
                     height: 48.h,
                   ),
@@ -174,27 +246,44 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                   SizedBox(width: 8.w),
                   Expanded(
-                    child: GestureDetector(
-                      onTap: () =>
-                          setState(() => _agreeToTerms = !_agreeToTerms),
-                      child: Text.rich(
-                        TextSpan(
-                          text: 'I agree to the ',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 11.sp,
-                            color: theme.colorScheme.onSurface.withOpacity(0.6),
-                          ),
-                          children: [
-                            TextSpan(
-                              text: 'Terms and Conditions',
-                              style: TextStyle(
-                                color: theme.colorScheme.primary,
-                                fontWeight: FontWeight.w700,
-                                decoration: TextDecoration.underline,
-                              ),
-                            ),
-                          ],
+                    child: Text.rich(
+                      TextSpan(
+                        text: 'I agree to the ',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 11.sp,
+                          color: theme.colorScheme.onSurface.withOpacity(0.6),
                         ),
+                        children: [
+                          TextSpan(
+                            text: 'Terms of Service',
+                            style: TextStyle(
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.w700,
+                              decoration: TextDecoration.underline,
+                            ),
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = () => LegalTermsPage.show(
+                                context,
+                                termId: 'tos',
+                                title: 'Terms of Service',
+                              ),
+                          ),
+                          const TextSpan(text: ' & '),
+                          TextSpan(
+                            text: 'Privacy Policy',
+                            style: TextStyle(
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.w700,
+                              decoration: TextDecoration.underline,
+                            ),
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = () => LegalTermsPage.show(
+                                context,
+                                termId: 'privacy',
+                                title: 'Privacy Policy',
+                              ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -207,7 +296,9 @@ class _SignupScreenState extends State<SignupScreen> {
                 width: double.infinity,
                 height: 48.h,
                 child: ElevatedButton(
-                  onPressed: _agreeToTerms ? () => context.go('/home') : null,
+                  onPressed: (_agreeToTerms && !_isLoading)
+                      ? _handleSignup
+                      : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: theme.colorScheme.primary,
                     foregroundColor: theme.colorScheme.onPrimary,
@@ -218,13 +309,22 @@ class _SignupScreenState extends State<SignupScreen> {
                     disabledBackgroundColor: theme.colorScheme.primary
                         .withOpacity(0.3),
                   ),
-                  child: Text(
-                    'Create Account',
-                    style: GoogleFonts.outfit(
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+                  child: _isLoading
+                      ? SizedBox(
+                          height: 20.h,
+                          width: 20.w,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: theme.colorScheme.onPrimary,
+                          ),
+                        )
+                      : Text(
+                          'Create Account',
+                          style: GoogleFonts.outfit(
+                            fontSize: 15.sp,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                 ),
               ),
               SizedBox(height: 24.h),

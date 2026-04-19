@@ -26,7 +26,7 @@ class _ProductMediaSectionState extends State<ProductMediaSection> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final mediaUrls = widget.product.mediaUrls;
+    final mediaUrls = widget.product.mediaUrls.toSet().toList();
 
     if (mediaUrls.isEmpty) return const SizedBox.shrink();
 

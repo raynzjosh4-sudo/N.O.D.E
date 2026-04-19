@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:node_app/features/home/domain/entities/supplier.dart';
+import 'package:node_app/core/domain/entities/location.dart';
 
 import '../../../../core/database/app_database.dart';
 import '../../domain/entities/product.dart';
@@ -45,32 +46,47 @@ class ProductModel extends Product {
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
     return ProductModel(
-      id: json['id'] as String,
-      sku: json['sku'] as String,
-      name: json['name'] as String,
-      brand: json['brand'] as String,
-      priceTiers: (json['price_tiers'] as List)
-          .map((e) => PriceTier.fromJson(e as Map<String, dynamic>))
+      id: json['id'] as String? ?? '',
+      sku: json['sku'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      brand: json['brand'] as String? ?? '',
+      priceTiers: (json['price_tiers'] as List?)
+              ?.map((e) => PriceTier.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      srp: (json['srp'] as num?)?.toDouble() ?? 0.0,
+      hsCode: json['hs_code'] as String? ?? '',
+      weightKg: (json['weight_kg'] as num?)?.toDouble() ?? 0.0,
+      volumeCbm: (json['volume_cbm'] as num?)?.toDouble() ?? 0.0,
+      originCountry: json['origin_country'] as String? ?? '',
+      unbsNumber: json['unbs_number'] as String? ?? '',
+      denier: json['denier'] as String? ?? '',
+      material: json['material'] as String? ?? '',
+      supplier: json['supplier'] != null
+          ? Supplier.fromJson(json['supplier'] as Map<String, dynamic>)
+          : Supplier(
+              id: json['supplier_id'] as String? ?? 'unknown',
+              name: 'N.O.D.E Supplier',
+              imageUrl: '',
+              category: 'Global Wholesale',
+              location: const Location(
+                latitude: 0,
+                longitude: 0,
+                addressName: 'Regional Hub',
+              ),
+            ),
+      categoryId: json['category_id'] as String? ?? '',
+      currentStock: json['current_stock'] as int? ?? 0,
+      leadTimeDays: json['lead_time_days'] as int? ?? 0,
+      warehouseLoc: json['warehouse_loc'] as String? ?? '',
+      seoTitle: json['seo_title'] as String? ?? '',
+      seoDescription: json['seo_description'] as String? ?? '',
+      searchKeywords: (json['search_keywords'] as List?)?.cast<String>() ?? [],
+      slug: json['slug'] as String? ?? '',
+      imageUrl: json['image_url'] as String? ?? '',
+      mediaUrls: ((json['media_urls'] as List?)?.cast<String>() ?? [])
+          .toSet()
           .toList(),
-      srp: (json['srp'] as num).toDouble(),
-      hsCode: json['hs_code'] as String,
-      weightKg: (json['weight_kg'] as num).toDouble(),
-      volumeCbm: (json['volume_cbm'] as num).toDouble(),
-      originCountry: json['origin_country'] as String,
-      unbsNumber: json['unbs_number'] as String,
-      denier: json['denier'] as String,
-      material: json['material'] as String,
-      supplier: Supplier.fromJson(json['supplier'] as Map<String, dynamic>),
-      categoryId: json['category_id'] as String,
-      currentStock: json['current_stock'] as int,
-      leadTimeDays: json['lead_time_days'] as int,
-      warehouseLoc: json['warehouse_loc'] as String,
-      seoTitle: json['seo_title'] as String,
-      seoDescription: json['seo_description'] as String,
-      searchKeywords: (json['search_keywords'] as List).cast<String>(),
-      slug: json['slug'] as String,
-      imageUrl: json['image_url'] as String,
-      mediaUrls: (json['media_urls'] as List?)?.cast<String>() ?? [],
       aspectRatio: (json['aspect_ratio'] as num?)?.toDouble() ?? 1.0,
       availableColors:
           (json['available_colors'] as List?)
@@ -89,7 +105,8 @@ class ProductModel extends Product {
           [],
       variantLabel: json['variant_label'] as String? ?? 'Size',
       support: ProductSupport.fromJson(
-        json['support'] as Map<String, dynamic>? ??
+        json['support_info'] as Map<String, dynamic>? ??
+            json['support'] as Map<String, dynamic>? ??
             {
               'whatsapp': '+256 000 000 000',
               'phone': '+256 000 000 000',
@@ -101,7 +118,7 @@ class ProductModel extends Product {
             {
               'id': 'tt_default',
               'content':
-                  'Standard trading terms apply for all wholesale transactions. A non-refundable deposit of 50% is required to initiate production, with the balance due strictly prior to dispatch from our central warehouse.'
+                  'Standard trading terms apply for all wholesale transactions.'
             },
       ),
     );
@@ -207,8 +224,9 @@ class ProductModel extends Product {
       slug: entry.slug,
       imageUrl: entry.imageUrl,
       mediaUrls: entry.mediaUrls != null
-          ? (jsonDecode(entry.mediaUrls!) as List).cast<String>()
+          ? (jsonDecode(entry.mediaUrls!) as List).cast<String>().toSet().toList()
           : [],
+      aspectRatio: entry.aspectRatio,
       availableColors: entry.availableColors != null
           ? (jsonDecode(entry.availableColors!) as List)
                 .map((e) => ProductColor.fromJson(e))
@@ -268,6 +286,7 @@ class ProductModel extends Product {
       slug: Value(slug),
       imageUrl: Value(imageUrl),
       mediaUrls: Value(jsonEncode(mediaUrls)),
+      aspectRatio: Value(aspectRatio),
       availableColors: Value(
         jsonEncode(availableColors.map((e) => e.toJson()).toList()),
       ),

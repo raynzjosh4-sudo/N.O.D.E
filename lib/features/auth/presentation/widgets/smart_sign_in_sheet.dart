@@ -1,51 +1,56 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-// Removed dummy import
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:node_app/features/auth/domain/entities/saved_account.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:node_app/core/utils/responsive_size.dart';
+import 'package:node_app/features/profile/presentation/pages/tabs/settingstab/pages/legal_terms_page.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/gestures.dart';
+import 'package:node_app/core/error/failure.dart';
+import 'package:node_app/features/showcase/presentation/services/node_toast_manager.dart';
+import 'package:node_app/features/showcase/presentation/widgets/node_toast.dart';
+import '../providers/auth_providers.dart';
 
-class SmartSignInSheet extends StatelessWidget {
-  SmartSignInSheet({super.key});
+class SmartSignInSheet extends ConsumerWidget {
+  const SmartSignInSheet({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? Color(0xFF1C1C21) : Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+        color: isDark ? const Color(0xFF1C1C21) : Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32.r)),
       ),
-      padding: EdgeInsets.fromLTRB(24, 16, 24, 20),
+      padding: EdgeInsets.fromLTRB(24.w, 16.h, 24.w, 24.h),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 🏷️ TOP ROW
+          // 🏷️ TOP ROW with N.O.D.E icon & Close
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                width: 26.w,
-                height: 26.h,
+                width: 32.w,
+                height: 32.h,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white,
+                  color: theme.colorScheme.primary.withOpacity(0.1),
                 ),
                 child: Center(
                   child: Image.asset(
                     'assets/google/google-logo.png',
-                    width: 16.w,
-                    height: 16.h,
+                    width: 18.w,
+                    height: 18.h,
                   ),
                 ),
               ),
               IconButton(
                 onPressed: () => Navigator.pop(context),
                 padding: EdgeInsets.zero,
-                constraints: BoxConstraints(),
+                constraints: const BoxConstraints(),
                 icon: Icon(
                   Icons.close_rounded,
                   size: 20.w,
@@ -54,119 +59,155 @@ class SmartSignInSheet extends StatelessWidget {
               ),
             ],
           ),
-          SizedBox(height: 12.h),
+          SizedBox(height: 16.h),
 
           // 📢 TITLE
           Text(
-            'Sign in to Node with your saved password',
+            'Sign in to N.O.D.E.',
             style: GoogleFonts.outfit(
-              fontSize: 17.sp,
-              fontWeight: FontWeight.w700,
+              fontSize: 22.sp,
+              fontWeight: FontWeight.w800,
               color: theme.colorScheme.onSurface,
-              height: 1.2.h,
+              height: 1.1,
             ),
           ),
-          SizedBox(height: 4.h),
+          SizedBox(height: 8.h),
 
           // ℹ️ SUBTITLE
           Text(
-            'You saved your Node passwords in your Google Account.',
+            'Sign in with Google to access your wholesale dashboard, manage inventory, and track orders.',
             style: GoogleFonts.plusJakartaSans(
-              fontSize: 11.5.sp,
+              fontSize: 13.sp,
+              height: 1.5,
               color: theme.colorScheme.onSurface.withOpacity(0.6),
             ),
           ),
-          SizedBox(height: 16.h),
+          SizedBox(height: 28.h),
 
-          Column(
-            children: [].map((account) {
-              final isLast = true; // Placeholder
-              return Padding(
-                padding: EdgeInsets.only(bottom: isLast ? 0 : 12.0),
-                child: _buildAccountRow(context, account),
-              );
-            }).toList(),
-          ),
-        ],
-      ),
-    );
-  }
+          // 🚀 PRIMARY ACTION: CONTINUE WITH GOOGLE
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                // Show loading feedback
+                if (context.mounted) {
+                  NodeToastManager.show(
+                    context,
+                    title: 'Authenticating',
+                    message: 'Connecting to Google Secure Login...',
+                    status: NodeToastStatus.info,
+                  );
+                }
 
-  Widget _buildAccountRow(BuildContext context, SavedAccount account) {
-    final theme = Theme.of(context);
+                final authService = ref.read(authServiceProvider);
+                final response = await authService.signInWithGoogle();
 
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.onSurface.withOpacity(0.04),
-        borderRadius: BorderRadius.circular(10.r),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 36.w,
-            height: 36.h,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: SvgPicture.asset(
-                'assets/icon/nodeicon.svg',
-                width: 24.w,
-                height: 24.h,
+                if (response != null && response.user != null) {
+                  if (context.mounted) {
+                    Navigator.pop(context); // Close sheet
+
+                    NodeToastManager.show(
+                      context,
+                      title: 'Success',
+                      message: 'Welcome back to N.O.D.E.',
+                      status: NodeToastStatus.success,
+                    );
+                  }
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  final failure = Failure.fromException(e);
+                  NodeToastManager.show(
+                    context,
+                    title: 'Login Failed',
+                    message: failure.toFriendlyMessage(),
+                    status: NodeToastStatus.error,
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: Colors.white,
+              minimumSize: Size(double.infinity, 54.h),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16.r),
               ),
+              elevation: 0,
             ),
-          ),
-          SizedBox(width: 10.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  account.email,
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 12.sp,
+                  'Continue with Google',
+                  style: GoogleFonts.outfit(
+                    fontSize: 15.sp,
                     fontWeight: FontWeight.w700,
-                    color: theme.colorScheme.onSurface,
                   ),
                 ),
-                Text(
-                  account.maskedPassword,
-                  style: TextStyle(
-                    fontSize: 10.sp,
-                    letterSpacing: 2,
-                    color: theme.colorScheme.onSurface.withOpacity(0.5),
-                    fontWeight: FontWeight.w900,
-                    height: 1.0.h,
-                  ),
-                ),
+                SizedBox(width: 8.w),
+                Icon(Icons.arrow_forward_rounded, size: 18.w),
               ],
             ),
           ),
-          SizedBox(width: 8.w),
-          // 🚀 SMALL IN-ROW CONTINUE BUTTON
-          SizedBox(
-            height: 28.h,
-            child: ElevatedButton(
-              onPressed: () => Navigator.pop(context),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: theme.colorScheme.primary,
-                foregroundColor: theme.colorScheme.onPrimary,
-                elevation: 0,
-                padding: EdgeInsets.symmetric(horizontal: 12.w),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14.r),
+
+          SizedBox(height: 16.h),
+
+          // ℹ️ FOOTER / ALTERNATIVE
+          Center(
+            child: Column(
+              children: [
+                Text(
+                  'Secure wholesale access powered by Google Authentication.',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 9.sp,
+                    fontWeight: FontWeight.w500,
+                    color: theme.colorScheme.onSurface.withOpacity(0.3),
+                  ),
                 ),
-              ),
-              child: Text(
-                'Continue',
-                style: GoogleFonts.outfit(
-                  fontSize: 11.sp,
-                  fontWeight: FontWeight.w700,
+                SizedBox(height: 8.h),
+                Text.rich(
+                  TextSpan(
+                    text: 'By continuing, you agree to our ',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 10.sp,
+                      color: theme.colorScheme.onSurface.withOpacity(0.4),
+                    ),
+                    children: [
+                      TextSpan(
+                        text: 'Terms',
+                        style: TextStyle(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.w700,
+                          decoration: TextDecoration.underline,
+                        ),
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = () => LegalTermsPage.show(
+                                context,
+                                termId: 'tos',
+                                title: 'Terms of Service',
+                              ),
+                      ),
+                      const TextSpan(text: ' & '),
+                      TextSpan(
+                        text: 'Privacy',
+                        style: TextStyle(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.w700,
+                          decoration: TextDecoration.underline,
+                        ),
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = () => LegalTermsPage.show(
+                                context,
+                                termId: 'privacy',
+                                title: 'Privacy Policy',
+                              ),
+                      ),
+                    ],
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-              ),
+              ],
             ),
           ),
         ],

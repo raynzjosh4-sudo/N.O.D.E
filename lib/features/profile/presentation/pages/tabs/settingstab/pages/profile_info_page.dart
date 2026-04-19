@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:node_app/core/error/failure.dart';
+import 'package:node_app/features/auth/presentation/providers/auth_state_provider.dart';
+import 'package:node_app/features/profile/data/repositories/profile_repository.dart';
 import 'package:uuid/uuid.dart';
 import 'location_picker_page.dart';
 import 'package:node_app/core/utils/responsive_size.dart';
 import 'package:node_app/core/database/app_database.dart';
+import 'package:node_app/core/domain/entities/location.dart';
 import 'package:node_app/features/auth/presentation/providers/user_providers.dart';
+import 'package:node_app/features/profile/presentation/providers/profile_providers.dart';
+import 'package:drift/drift.dart' hide Column;
 import '../../../../../../showcase/presentation/services/node_toast_manager.dart';
 import '../../../../../../showcase/presentation/widgets/node_toast.dart';
 
@@ -48,19 +54,61 @@ class _ProfileInfoPageState extends ConsumerState<ProfileInfoPage> {
   }
 
   Future<void> _loadInitialData() async {
-    // Try to load from DB
-    final user = await ref.read(userProfileProvider.future);
-    if (user != null) {
-      _nameController.text = user.fullName;
-      _addressController.text = user.address;
-      _regionController.text = user.city;
-      _momoController.text = user.phoneNumber;
-    } else {
-      // Fallback to dummy for demo if DB is empty
-      _nameController.text = 'Sarah Jenkins (NODE Wholesale)';
-      _addressController.text = 'Block 4, Namanve Industrial Park';
-      _regionController.text = 'Kampala / Mukono';
-      _momoController.text = '256772000000';
+    debugPrint('🔄 [ProfileInfo] Loading initial data...');
+
+    // 1. Try immediate read from reactive providers
+    final user = ref.read(userProfileProvider).value;
+    final business = ref.read(userBusinessProvider).value;
+
+    debugPrint(
+      '📍 [ProfileInfo] Local Snapshot - User: ${user != null}, Business: ${business != null}',
+    );
+
+    if (mounted) {
+      if (business != null) {
+        debugPrint('✅ [ProfileInfo] Found local business data. Populating...');
+        _nameController.text = business.legalName;
+        _addressController.text = business.physicalAddress ?? '';
+        _regionController.text = business.city ?? business.region ?? '';
+        _momoController.text = business.phoneNumber ?? '';
+      } else if (user != null) {
+        debugPrint('ℹ️ [ProfileInfo] No business data, using user identity...');
+        _nameController.text = user.fullName;
+      }
+    }
+
+    // 2. SAFETY SYNC: If data is missing, force a sync from Supabase
+    if (user == null || business == null) {
+      debugPrint(
+        '⚠️ [ProfileInfo] Data missing locally. Triggering Safety Sync...',
+      );
+      final userId = ref.read(authStateProvider).value?.session?.user.id;
+
+      if (userId != null) {
+        try {
+          await ref.read(profileRepositoryProvider).syncProfile(userId);
+          debugPrint('✅ [ProfileInfo] Safety Sync Complete.');
+
+          // Refresh and repopulate
+          final freshUser = await ref.read(userProfileProvider.future);
+          final freshBus = await ref.read(userBusinessProvider.future);
+
+          if (mounted) {
+            if (freshBus != null) {
+              _nameController.text = freshBus.legalName;
+              _addressController.text = freshBus.physicalAddress ?? '';
+              _regionController.text = freshBus.city ?? freshBus.region ?? '';
+              _momoController.text = freshBus.phoneNumber ?? '';
+            } else if (freshUser != null && _nameController.text.isEmpty) {
+              _nameController.text = freshUser.fullName;
+            }
+          }
+        } catch (e) {
+          debugPrint('❌ [ProfileInfo] Safety Sync FAILED: $e');
+        }
+      } else {
+        debugPrint('❌ [ProfileInfo] Cannot sync: No userId found in AuthState');
+      }
     }
   }
 
@@ -73,11 +121,44 @@ class _ProfileInfoPageState extends ConsumerState<ProfileInfoPage> {
     super.dispose();
   }
 
+  Future<void> _handleRefresh() async {
+    final userId = ref.read(authStateProvider).value?.session?.user.id;
+    if (userId == null) return;
+
+    try {
+      await ref.read(profileRepositoryProvider).syncProfile(userId);
+      // Force individual providers to refresh
+      ref.invalidate(userProfileProvider);
+      ref.invalidate(userBusinessProvider);
+
+      if (mounted) {
+        NodeToastManager.show(
+          context,
+          title: 'Identity Refreshed',
+          message: 'All your business data is now up to date.',
+          status: NodeToastStatus.success,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        NodeToastManager.show(
+          context,
+          title: 'Sync Failed',
+          message: Failure.fromException(e).toFriendlyMessage(),
+          status: NodeToastStatus.error,
+        );
+      }
+    }
+  }
+
   Future<void> _saveProfile() async {
+    debugPrint('🚀 [ProfileInfo] Save Profile Button Tapped');
+
     if (_nameController.text.isEmpty ||
         _addressController.text.isEmpty ||
         _regionController.text.isEmpty ||
         _momoController.text.isEmpty) {
+      debugPrint('⚠️ [ProfileInfo] Save blocked: Missing fields');
       NodeToastManager.show(
         context,
         title: 'Missing Information',
@@ -89,44 +170,93 @@ class _ProfileInfoPageState extends ConsumerState<ProfileInfoPage> {
 
     setState(() => _isLoading = true);
 
-    final repository = ref.read(userRepositoryProvider);
+    try {
+      final repository = ref.read(userRepositoryProvider);
+      final currentUserAvailable = ref.read(userProfileProvider).value;
+      final id = currentUserAvailable?.id ?? const Uuid().v4();
 
-    // For demo, we use a fixed ID or check if one exists
-    final currentUserAvailable = await ref.read(userProfileProvider.future);
-    final id = currentUserAvailable?.id ?? const Uuid().v4();
-
-    final user = UserEntry(
-      id: id,
-      fullName: _nameController.text,
-      address: _addressController.text,
-      city: _regionController.text,
-      phoneNumber: _momoController.text,
-      updatedAt: DateTime.now(),
-    );
-
-    final result = await repository.saveUser(user);
-
-    if (mounted) {
-      setState(() => _isLoading = false);
-      result.fold(
-        (failure) => NodeToastManager.show(
-          context,
-          title: 'Storage Error',
-          message: failure.message,
-          status: NodeToastStatus.error,
-        ),
-        (_) {
-          NodeToastManager.show(
-            context,
-            title: 'Identity Secured',
-            message: 'Your business profile has been updated.',
-            status: NodeToastStatus.success,
-          );
-          // Invalidate provider to refresh data elsewhere
-          ref.invalidate(userProfileProvider);
-          if (widget.isRequired) Navigator.pop(context);
-        },
+      final user = UserEntry(
+        id: id,
+        fullName: currentUserAvailable?.fullName ?? _nameController.text,
+        email: currentUserAvailable?.email,
+        role: currentUserAvailable?.role ?? 'customer',
+        profilePicUrl: currentUserAvailable?.profilePicUrl,
+        updatedAt: DateTime.now(),
       );
+
+      // Parse coordinates if available in the address string
+      double? lat;
+      double? lng;
+      if (_addressController.text.contains('Loc:')) {
+        final regExp = RegExp(r"Loc:\s*(-?\d+\.?\d*),\s*(-?\d+\.?\d*)");
+        final match = regExp.firstMatch(_addressController.text);
+        if (match != null && match.groupCount >= 2) {
+          lat = double.tryParse(match.group(1) ?? '');
+          lng = double.tryParse(match.group(2) ?? '');
+        }
+      }
+
+      final business = BusinessTableCompanion.insert(
+        id: id,
+        legalName: _nameController.text,
+        physicalAddress: Value(_addressController.text),
+        city: Value(_regionController.text),
+        phoneNumber: Value(_momoController.text),
+        region: Value(_regionController.text),
+        latitude: Value(lat),
+        longitude: Value(lng),
+      );
+
+      debugPrint('📡 [ProfileInfo] Sending to Repository:');
+      debugPrint('   - Name: ${user.fullName}');
+      debugPrint('   - Address: ${_addressController.text}');
+      debugPrint('   - Phone: ${_momoController.text}');
+
+      final result = await repository.saveProfile(
+        user: user,
+        business: business,
+      );
+
+      if (mounted) {
+        setState(() => _isLoading = false);
+        result.fold(
+          (failure) {
+            debugPrint(
+              '❌ [ProfileInfo] Repository Failure: ${failure.message}',
+            );
+            NodeToastManager.show(
+              context,
+              title: 'Storage Error',
+              message: failure.toFriendlyMessage(),
+              status: NodeToastStatus.error,
+            );
+          },
+          (_) {
+            debugPrint('✅ [ProfileInfo] Profile Saved Successfully');
+            NodeToastManager.show(
+              context,
+              title: 'Identity Secured',
+              message: 'Your business profile has been updated.',
+              status: NodeToastStatus.success,
+            );
+            // Invalidate provider to refresh data elsewhere
+            ref.invalidate(userProfileProvider);
+            if (widget.isRequired) Navigator.pop(context);
+          },
+        );
+      }
+    } catch (e, stack) {
+      debugPrint('❌ [ProfileInfo] CRITICAL CRASH: $e');
+      debugPrint('📜 Stack Trace: $stack');
+      if (mounted) {
+        setState(() => _isLoading = false);
+        NodeToastManager.show(
+          context,
+          title: 'Critical Error',
+          message: Failure.fromException(e).toFriendlyMessage(),
+          status: NodeToastStatus.error,
+        );
+      }
     }
   }
 
@@ -135,6 +265,36 @@ class _ProfileInfoPageState extends ConsumerState<ProfileInfoPage> {
     final theme = Theme.of(context);
     final onSurface = theme.colorScheme.onSurface;
     final primary = theme.primaryColor;
+
+    // Listen for data updates to pre-fill controllers if empty
+    ref.listen(userProfileProvider, (previous, next) {
+      final user = next.value;
+      if (user != null && _nameController.text.isEmpty) {
+        _nameController.text = user.fullName;
+      }
+    });
+
+    ref.listen(userBusinessProvider, (previous, next) {
+      final business = next.value;
+      if (business != null) {
+        // ALWAYS prioritize business legal name over user full name on this page
+        final user = ref.read(userProfileProvider).value;
+        if (_nameController.text.isEmpty ||
+            (user != null && _nameController.text == user.fullName)) {
+          _nameController.text = business.legalName;
+        }
+
+        if (_addressController.text.isEmpty) {
+          _addressController.text = business.physicalAddress ?? '';
+        }
+        if (_regionController.text.isEmpty) {
+          _regionController.text = business.city ?? business.region ?? '';
+        }
+        if (_momoController.text.isEmpty) {
+          _momoController.text = business.phoneNumber ?? '';
+        }
+      }
+    });
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -185,87 +345,93 @@ class _ProfileInfoPageState extends ConsumerState<ProfileInfoPage> {
               ),
             ),
           Expanded(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 24.h),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildSectionHeader(context, 'LEGAL IDENTITY'),
-                  SizedBox(height: 12.h),
-                  _buildTextField(
-                    context,
-                    'Full Legal / Business Name',
-                    _nameController,
-                    Icons.business_rounded,
-                  ),
-
-                  SizedBox(height: 32.h),
-                  _buildSectionHeader(context, 'LOCATION & CONTACT'),
-                  SizedBox(height: 12.h),
-                  _buildTextField(
-                    context,
-                    'Physical Address',
-                    _addressController,
-                    Icons.location_on_outlined,
-                    onMapPick: () async {
-                      final result = await LocationPickerPage.show(context);
-                      if (result != null) {
-                        setState(() => _addressController.text = result);
-                      }
-                    },
-                  ),
-                  SizedBox(height: 16.h),
-                  _buildTextField(
-                    context,
-                    'Region / City',
-                    _regionController,
-                    Icons.map_outlined,
-                    // REMOVED readOnly and onMapPick logic for City as requested
-                  ),
-
-                  SizedBox(height: 32.h),
-                  _buildTextField(
-                    context,
-                    'Phone Number',
-                    _momoController,
-                    Icons.phone_outlined,
-                  ),
-
-                  SizedBox(height: 48.h),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _saveProfile,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primary,
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(vertical: 20.h),
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16.r),
-                        ),
-                      ),
-                      child: _isLoading
-                          ? SizedBox(
-                              height: 20.h,
-                              width: 20.h,
-                              child: const CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : Text(
-                              'SAVE PROFILE',
-                              style: GoogleFonts.outfit(
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 1,
-                              ),
-                            ),
+            child: RefreshIndicator(
+              onRefresh: _handleRefresh,
+              color: primary,
+              backgroundColor: theme.colorScheme.surface,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 24.h),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSectionHeader(context, 'LEGAL IDENTITY'),
+                    SizedBox(height: 12.h),
+                    _buildTextField(
+                      context,
+                      'Full Legal / Business Name',
+                      _nameController,
+                      Icons.business_rounded,
                     ),
-                  ),
-                  SizedBox(height: 40.h),
-                ],
+
+                    SizedBox(height: 32.h),
+                    _buildSectionHeader(context, 'LOCATION & CONTACT'),
+                    SizedBox(height: 12.h),
+                    _buildTextField(
+                      context,
+                      'Physical Address',
+                      _addressController,
+                      Icons.location_on_outlined,
+                      onMapPick: () async {
+                        final result = await LocationPickerPage.show(context);
+                        if (result != null) {
+                          setState(() => _addressController.text = result);
+                        }
+                      },
+                    ),
+                    SizedBox(height: 16.h),
+                    _buildTextField(
+                      context,
+                      'Region / City',
+                      _regionController,
+                      Icons.map_outlined,
+                      // REMOVED readOnly and onMapPick logic for City as requested
+                    ),
+
+                    SizedBox(height: 32.h),
+                    _buildTextField(
+                      context,
+                      'Phone Number',
+                      _momoController,
+                      Icons.phone_outlined,
+                    ),
+
+                    SizedBox(height: 48.h),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _saveProfile,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primary,
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(vertical: 20.h),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16.r),
+                          ),
+                        ),
+                        child: _isLoading
+                            ? SizedBox(
+                                height: 20.h,
+                                width: 20.h,
+                                child: const CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Text(
+                                'SAVE PROFILE',
+                                style: GoogleFonts.outfit(
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 1,
+                                ),
+                              ),
+                      ),
+                    ),
+                    SizedBox(height: 40.h),
+                  ],
+                ),
               ),
             ),
           ),

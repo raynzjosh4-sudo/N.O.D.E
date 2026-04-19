@@ -2,17 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:node_app/core/utils/responsive_size.dart';
+import 'package:node_app/core/domain/entities/location.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SpecsBrandSection extends StatelessWidget {
   final String productName;
   final String brandName;
   final String supplierName;
+  final Location? supplierLocation;
 
-  SpecsBrandSection({
+  const SpecsBrandSection({
     super.key,
     required this.productName,
     required this.brandName,
     required this.supplierName,
+    this.supplierLocation,
   });
 
   @override
@@ -59,14 +63,19 @@ class SpecsBrandSection extends StatelessWidget {
                   height: 32.h,
                   child: ClipOval(
                     child: CachedNetworkImage(
-                      imageUrl: 'https://logo.clearbit.com/${brandName.toLowerCase().replaceAll(' ', '')}.com',
+                      imageUrl:
+                          'https://logo.clearbit.com/${brandName.toLowerCase().replaceAll(' ', '')}.com',
                       fit: BoxFit.contain,
-                      placeholder: (context, url) => Container(color: theme.primaryColor.withOpacity(0.05)),
+                      placeholder: (context, url) => Container(
+                        color: theme.primaryColor.withOpacity(0.05),
+                      ),
                       errorWidget: (context, url, error) => Container(
                         color: theme.primaryColor.withOpacity(0.1),
                         child: Center(
                           child: Text(
-                            brandName.isNotEmpty ? brandName[0].toUpperCase() : 'B',
+                            brandName.isNotEmpty
+                                ? brandName[0].toUpperCase()
+                                : 'B',
                             style: GoogleFonts.outfit(
                               fontSize: 14.sp,
                               fontWeight: FontWeight.bold,
@@ -97,9 +106,48 @@ class SpecsBrandSection extends StatelessWidget {
                         runSpacing: 8,
                         children: [
                           GestureDetector(
-                            onTap: () {},
+                            onTap: () async {
+                              // 🔍 DEBUG: Log raw supplier location
+                              debugPrint('📍 Supplier: $supplierName');
+                              debugPrint(
+                                '   Lat: ${supplierLocation?.latitude}',
+                              );
+                              debugPrint(
+                                '   Lng: ${supplierLocation?.longitude}',
+                              );
+                              debugPrint(
+                                '   Address: ${supplierLocation?.addressName}',
+                              );
+
+                              if (supplierLocation != null &&
+                                  (supplierLocation!.latitude != 0.0 ||
+                                      supplierLocation!.longitude != 0.0)) {
+                                final url = Uri.parse(
+                                  'https://www.google.com/maps/search/?api=1&query=${supplierLocation!.latitude},${supplierLocation!.longitude}',
+                                );
+                                try {
+                                  if (await canLaunchUrl(url)) {
+                                    await launchUrl(
+                                      url,
+                                      mode: LaunchMode.externalApplication,
+                                    );
+                                  } else {
+                                    debugPrint('❌ Could not launch maps URL');
+                                  }
+                                } catch (e) {
+                                  debugPrint('❌ Error launching maps: $e');
+                                }
+                              } else {
+                                debugPrint(
+                                  '⚠️ Supplier location is unavailable or invalid (0,0)',
+                                );
+                              }
+                            },
                             child: Container(
-                              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 10.w,
+                                vertical: 6.h,
+                              ),
                               decoration: BoxDecoration(
                                 color: onSurface.withOpacity(0.05),
                                 borderRadius: BorderRadius.circular(20.r),
@@ -107,9 +155,10 @@ class SpecsBrandSection extends StatelessWidget {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.location_on_outlined, 
-                                    size: 14.w, 
-                                    color: onSurface.withOpacity(0.4)
+                                  Icon(
+                                    Icons.location_on_outlined,
+                                    size: 14.w,
+                                    color: onSurface.withOpacity(0.4),
                                   ),
                                   SizedBox(width: 4.w),
                                   Text(

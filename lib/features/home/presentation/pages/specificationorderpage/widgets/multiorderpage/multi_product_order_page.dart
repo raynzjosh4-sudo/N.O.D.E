@@ -15,8 +15,9 @@ import '../saved_item_picker.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
-import 'package:node_app/features/orders/presentation/providers/bulk_order_providers.dart';
-import 'package:node_app/features/auth/presentation/providers/user_providers.dart';
+import 'package:node_app/features/orders/presentation/providers/draft_order_providers.dart';
+import 'package:node_app/features/orders/presentation/providers/wholesale_order_providers.dart';
+import 'package:node_app/features/profile/presentation/providers/profile_providers.dart';
 import 'package:node_app/features/profile/domain/entities/order_status.dart';
 import 'package:node_app/core/utils/color_utils.dart';
 
@@ -688,19 +689,19 @@ class _MultiProductOrderPageState extends ConsumerState<MultiProductOrderPage> {
                                       await SavedItemPicker.show(context);
                                   if (pickerResult == null) return;
 
-                                  final repository = ref.read(
-                                    orderRepositoryProvider,
+                                  final notifier = ref.read(
+                                    draftOrdersProvider.notifier,
                                   );
 
                                   if (pickerResult.newDraftName != null) {
                                     // Case 1: Create a brand new draft
                                     final draft = DraftOrder(
-                                      id: pickerResult
-                                          .newDraftName!, // Use name as ID or generate UUID? Let's use name for now as the picker implies
+                                      id: const Uuid()
+                                          .v4(), // UUID required by Supabase
                                       lastModified: DateTime.now(),
                                       entries: _completedEntries,
                                     );
-                                    await repository.saveDraft(draft, user.id);
+                                    await notifier.saveDraft(draft);
                                   } else if (pickerResult.selectedDrafts !=
                                       null) {
                                     // Case 2: Append to existing drafts
@@ -714,15 +715,12 @@ class _MultiProductOrderPageState extends ConsumerState<MultiProductOrderPage> {
                                           ..._completedEntries,
                                         ],
                                       );
-                                      await repository.saveDraft(
-                                        updatedDraft,
-                                        user.id,
-                                      );
+                                      await notifier.saveDraft(updatedDraft);
                                     }
                                   }
 
                                   if (mounted) {
-                                    ref.invalidate(userDraftsProvider);
+                                    ref.invalidate(draftOrdersProvider);
                                     Navigator.pop(context);
                                     NodeToastManager.show(
                                       context,
@@ -767,11 +765,12 @@ class _MultiProductOrderPageState extends ConsumerState<MultiProductOrderPage> {
                                     date: DateTime.now(),
                                     status: OrderStatus.pending,
                                     entries: _completedEntries,
+                                    updatedAt: DateTime.now(),
                                   );
 
                                   final result = await ref
-                                      .read(orderRepositoryProvider)
-                                      .saveOrder(order, user.id);
+                                      .read(wholesaleOrdersProvider.notifier)
+                                      .saveOrder(order);
 
                                   if (mounted) {
                                     result.fold(
@@ -782,7 +781,7 @@ class _MultiProductOrderPageState extends ConsumerState<MultiProductOrderPage> {
                                         status: NodeToastStatus.error,
                                       ),
                                       (_) {
-                                        ref.invalidate(userOrdersProvider);
+                                        ref.invalidate(wholesaleOrdersProvider);
                                         Navigator.pop(context);
                                         NodeToastManager.show(
                                           context,

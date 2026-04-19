@@ -16,13 +16,46 @@ class Supplier extends Equatable {
     required this.location,
   });
 
-  factory Supplier.fromJson(Map<String, dynamic> json) => Supplier(
-        id: json['id'] as String,
-        name: json['name'] as String,
-        imageUrl: json['imageUrl'] as String,
-        category: json['category'] as String,
-        location: Location.fromJson(json['location'] as Map<String, dynamic>),
-      );
+  factory Supplier.fromJson(Map<String, dynamic> json) {
+    Map<String, dynamic> businessData = json;
+    
+    if (json['business'] is Map<String, dynamic>) {
+      businessData = json['business'] as Map<String, dynamic>;
+    } else if (json['business'] is List && (json['business'] as List).isNotEmpty) {
+      final bList = json['business'] as List;
+      if (bList.first is Map<String, dynamic>) {
+        businessData = bList.first as Map<String, dynamic>;
+      }
+    }
+
+    return Supplier(
+      id: json['id'] as String? ?? json['user_id'] as String? ?? '',
+      name: json['name'] as String? ??
+          businessData['legal_name'] as String? ??
+          json['full_name'] as String? ??
+          'N.O.D.E Supplier',
+      imageUrl: json['imageUrl'] as String? ??
+          businessData['logo_url'] as String? ??
+          json['profile_pic_url'] as String? ??
+          '',
+      category: json['category'] as String? ??
+          businessData['industry_group'] as String? ??
+          'General',
+      location: json['location'] != null
+          ? Location.fromJson(json['location'] as Map<String, dynamic>)
+          : Location.create(
+              latitude: (businessData['latitude'] as num?)?.toDouble() ??
+                  (json['latitude'] as num?)?.toDouble() ??
+                  0.0,
+              longitude: (businessData['longitude'] as num?)?.toDouble() ??
+                  (json['longitude'] as num?)?.toDouble() ??
+                  0.0,
+              addressName: businessData['physical_address'] as String? ??
+                  json['physical_address'] as String? ??
+                  'Headquarters',
+            ),
+    );
+  }
 
   Map<String, dynamic> toJson() => {
         'id': id,

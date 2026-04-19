@@ -19,13 +19,11 @@ class ProductOrderEntry extends Equatable {
       );
 
   double get totalAmount {
-    double total = 0;
-    for (var group in confirmedGroups) {
-      final groupQty = group.sizeQtys.values.fold(0, (s, q) => s + q);
-      final unitPrice = savedProduct.product.getPriceForQuantity(groupQty);
-      total += unitPrice * groupQty;
-    }
-    return total;
+    // ✅ Price tier is resolved against the TOTAL units for this product entry
+    // (all color groups combined), so crossing a threshold like 5+ units applies
+    // correctly regardless of how units are split across colors.
+    final overallUnitPrice = savedProduct.product.getPriceForQuantity(totalUnits);
+    return overallUnitPrice * totalUnits;
   }
 
   Map<String, dynamic> toMap() {
@@ -51,13 +49,19 @@ class WholesaleOrder extends Equatable {
   final List<ProductOrderEntry> entries;
   final OrderStatus status;
   final String? pdfId;
+  final String? productId; // Link to specific product for UI toggle
+  final String? supplierId; // Link to supplier for filtering
+  final DateTime updatedAt; // Track submission/status change date
 
   const WholesaleOrder({
     required this.id,
     required this.date,
     required this.entries,
     required this.status,
+    required this.updatedAt,
     this.pdfId,
+    this.productId,
+    this.supplierId,
   });
 
   int get totalItems => entries.length;
@@ -65,5 +69,5 @@ class WholesaleOrder extends Equatable {
   double get totalAmount => entries.fold(0, (sum, e) => sum + e.totalAmount);
 
   @override
-  List<Object?> get props => [id, date, entries, status, pdfId];
+  List<Object?> get props => [id, date, entries, status, pdfId, productId, supplierId, updatedAt];
 }

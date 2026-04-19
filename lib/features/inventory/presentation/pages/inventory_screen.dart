@@ -8,6 +8,7 @@ import '../widgets/advanced_product_card.dart';
 import '../widgets/quantity_bottom_sheet.dart';
 import '../../../../core/theme/app_theme.dart';
 import 'package:node_app/core/utils/responsive_size.dart';
+import 'package:node_app/core/widgets/node_error_state.dart';
 
 class InventoryScreen extends ConsumerWidget {
   const InventoryScreen({super.key});
@@ -15,7 +16,7 @@ class InventoryScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final inventoryAsync = ref.watch(inventoryNotifierProvider);
-    final filteredProducts = ref.watch(filteredInventoryProvider);
+    final filteredProducts = inventoryAsync.value ?? [];
     final theme = Theme.of(context);
     final appColors = AppColors.of(context);
 
@@ -39,11 +40,19 @@ class InventoryScreen extends ConsumerWidget {
             actions: [
               IconButton(
                 icon: Icon(Icons.notifications_none_rounded),
-                onPressed: () {},
+                onPressed: () => NodeToastManager.show(
+                  context,
+                  title: 'Coming Soon',
+                  message: 'Business notifications are being initialized.',
+                ),
               ),
               IconButton(
                 icon: Icon(Icons.account_circle_outlined),
-                onPressed: () {},
+                onPressed: () => NodeToastManager.show(
+                  context,
+                  title: 'Coming Soon',
+                  message: 'Account detailed analytics are under development.',
+                ),
               ),
             ],
           ),
@@ -91,7 +100,10 @@ class InventoryScreen extends ConsumerWidget {
                 child: Center(child: CircularProgressIndicator()),
               ),
               error: (err, stack) => SliverFillRemaining(
-                child: Center(child: Text('Error: $err')),
+                child: NodeErrorState(
+                  error: err,
+                  onRetry: () => ref.refresh(inventoryNotifierProvider),
+                ),
               ),
             ),
           ),

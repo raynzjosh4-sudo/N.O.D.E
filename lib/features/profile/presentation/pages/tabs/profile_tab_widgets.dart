@@ -199,12 +199,14 @@ class ProfileSavedProductList extends StatelessWidget {
   final List<SavedProduct> products;
   final Set<String> selectedProductIds;
   final Function(String) onProductToggled;
+  final Function(String) onProductDeleted;
 
   ProfileSavedProductList({
     super.key,
     required this.products,
     required this.selectedProductIds,
     required this.onProductToggled,
+    required this.onProductDeleted,
   });
 
   @override
@@ -214,10 +216,29 @@ class ProfileSavedProductList extends StatelessWidget {
       itemCount: products.length,
       itemBuilder: (context, index) {
         final savedProduct = products[index];
-        return ProfileSavedProductTile(
-          savedProduct: savedProduct,
-          isSelected: selectedProductIds.contains(savedProduct.product.id),
-          onTap: () => onProductToggled(savedProduct.product.id),
+        return Dismissible(
+          key: Key(savedProduct.id ?? savedProduct.product.id),
+          direction: DismissDirection.endToStart,
+          background: Container(
+            alignment: Alignment.centerRight,
+            padding: EdgeInsets.symmetric(horizontal: 24.w),
+            color: Colors.red.shade900,
+            child: Icon(
+              Icons.delete_sweep_rounded,
+              color: Colors.white,
+              size: 28.w,
+            ),
+          ),
+          onDismissed: (_) {
+            if (savedProduct.id != null) {
+              onProductDeleted(savedProduct.id!);
+            }
+          },
+          child: ProfileSavedProductTile(
+            savedProduct: savedProduct,
+            isSelected: selectedProductIds.contains(savedProduct.product.id),
+            onTap: () => onProductToggled(savedProduct.product.id),
+          ),
         );
       },
     );

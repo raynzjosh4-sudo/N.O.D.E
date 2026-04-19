@@ -13,5 +13,7 @@ abstract class PdfRepository {
 
   Future<Either<Failure, List<PdfDocument>>> getUserPdfs(String userId);
 
+  Future<Either<Failure, PdfDocument>> getPdfById(String id);
+
   Future<Either<Failure, void>> deletePdf(String id);
 }

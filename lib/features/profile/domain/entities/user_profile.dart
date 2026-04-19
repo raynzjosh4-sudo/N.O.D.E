@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'business_profile.dart';
+import 'package:node_app/features/auth/domain/entities/business_profile.dart';
 import 'wholesale_order.dart';
 import 'draft_order.dart';
 import 'saved_product.dart';

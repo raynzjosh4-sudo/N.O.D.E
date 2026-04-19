@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/database/app_database.dart';
 import '../../../../core/error/failure.dart';
+import '../../../../core/services/notification_service.dart';
 import 'package:node_app/core/utils/color_utils.dart';
 import '../../../../features/inventory/domain/entities/product.dart';
 import '../../../../features/home/domain/entities/supplier.dart';
@@ -43,6 +44,13 @@ class OrderRepositoryImpl implements OrderRepository {
         createdAt: order.date,
       );
       await database.into(database.ordersTable).insertOnConflictUpdate(entry);
+
+      // 🔔 Trigger Local Confirmation
+      NotificationService.showConfirmationAlert(
+        title: 'Order Saved',
+        body: 'Your wholesale order has been saved successfully.',
+      );
+
       return const Right(null);
     } catch (e) {
       return Left(CacheFailure(e.toString()));
@@ -67,6 +75,13 @@ class OrderRepositoryImpl implements OrderRepository {
         createdAt: draft.lastModified,
       );
       await database.into(database.ordersTable).insertOnConflictUpdate(entry);
+
+      // 🔔 Trigger Local Confirmation
+      NotificationService.showConfirmationAlert(
+        title: 'Draft Saved',
+        body: 'Your order draft is now in the Drafts tab.',
+      );
+
       return const Right(null);
     } catch (e) {
       return Left(CacheFailure(e.toString()));
@@ -80,13 +95,14 @@ class OrderRepositoryImpl implements OrderRepository {
         ..where((t) => t.userId.equals(userId) & t.isDraft.equals(false));
       final results = await query.get();
 
-      final domainOrders = results.map((row) {
+      final List<WholesaleOrder> domainOrders = results.map((row) {
         return WholesaleOrder(
           id: row.id,
           date: row.createdAt,
           status: _parseStatus(row.status),
           entries: _parseItems(row.itemsJson),
           pdfId: row.pdfId,
+          updatedAt: row.updatedAt ?? row.createdAt,
         );
       }).toList();
 
@@ -144,6 +160,7 @@ class OrderRepositoryImpl implements OrderRepository {
         status: _parseStatus(result.status),
         entries: _parseItems(result.itemsJson),
         pdfId: result.pdfId,
+        updatedAt: result.updatedAt ?? result.createdAt,
       ));
     } catch (e) {
       return Left(CacheFailure(e.toString()));

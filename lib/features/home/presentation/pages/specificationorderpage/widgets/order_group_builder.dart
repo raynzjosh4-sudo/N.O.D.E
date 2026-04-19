@@ -100,10 +100,17 @@ class _OrderGroupBuilderState extends State<OrderGroupBuilder> {
         children: [
           // ── COLOUR ──────────────────────────────────────────────────────────
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20.w),
+            padding: EdgeInsets.symmetric(horizontal: 12.w),
             child: OrderSectionLabel(label: 'SELECT COLOUR YOU WANT'),
           ),
-          SizedBox(height: 12.h),
+          SizedBox(height: 1.h),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12.w),
+            child: OrderSectionLabel(
+              label: 'tab the color you want, then tap the sizes',
+            ),
+          ),
+          SizedBox(height: 5.h),
 
           if (availableColors.isEmpty)
             Padding(

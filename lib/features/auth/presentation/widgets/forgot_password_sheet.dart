@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:node_app/core/utils/responsive_size.dart';
+import 'package:node_app/features/showcase/presentation/services/node_toast_manager.dart';
+import 'package:node_app/features/showcase/presentation/widgets/node_toast.dart';
 
 class ForgotPasswordSheet extends StatefulWidget {
   const ForgotPasswordSheet({super.key});
@@ -111,13 +113,13 @@ class _ForgotPasswordSheetState extends State<ForgotPasswordSheet> {
               ),
               filled: true,
               fillColor: onSurface.withOpacity(0.03),
-              contentPadding:
-                  EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 16.w,
+                vertical: 14.h,
+              ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12.r),
-                borderSide: BorderSide(
-                  color: onSurface.withOpacity(0.05),
-                ),
+                borderSide: BorderSide(color: onSurface.withOpacity(0.05)),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12.r),
@@ -135,15 +137,12 @@ class _ForgotPasswordSheetState extends State<ForgotPasswordSheet> {
               onPressed: () {
                 // Simulate send action
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Recovery link sent to ${_emailController.text}',
-                      style: GoogleFonts.plusJakartaSans(fontSize: 12.sp),
-                    ),
-                    behavior: SnackBarBehavior.floating,
-                    backgroundColor: primary,
-                  ),
+                NodeToastManager.show(
+                  context,
+                  title: 'Email Sent',
+                  message:
+                      'If an account exists for ${_emailController.text}, you will receive a password reset link.',
+                  status: NodeToastStatus.success,
                 );
               },
               style: ElevatedButton.styleFrom(

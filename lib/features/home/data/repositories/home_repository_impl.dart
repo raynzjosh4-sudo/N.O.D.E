@@ -1,11 +1,16 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:node_app/features/inventory/domain/entities/product.dart';
-import 'package:node_app/features/home/data/product_dummy_data.dart';
+import 'package:node_app/features/home/domain/entities/promo_campaign.dart';
 import '../../../../core/error/failure.dart';
 import '../../domain/entities/supplier.dart';
 import '../../domain/repositories/home_repository.dart';
+import 'package:node_app/features/inventory/domain/repositories/i_inventory_repository.dart';
 
 class HomeRepositoryImpl implements HomeRepository {
+  final IInventoryRepository inventoryRepository;
+
+  HomeRepositoryImpl(this.inventoryRepository);
+
   @override
   Future<Either<Failure, List<Product>>> getExploreProducts({
     required int page,
@@ -13,37 +18,12 @@ class HomeRepositoryImpl implements HomeRepository {
     String? supplierId,
     String? category,
   }) async {
-    try {
-      // ⏱️ Simulate minimal delay
-      await Future.delayed(const Duration(milliseconds: 300));
-
-      final allProducts = ProductDummyData.products;
-
-      var filtered = allProducts.where((p) {
-        if (category != null && p.categoryId != category) return false;
-        if (supplierId != null && p.supplier.id != supplierId) return false;
-        return true;
-      }).toList();
-
-      // If no perfect match (supplier + category), fallback to just category
-      if (filtered.isEmpty && category != null) {
-        filtered = allProducts.where((p) => p.categoryId == category).toList();
-      }
-
-      // If still empty or very few, just show some default products
-      if (filtered.length < 2) {
-        filtered = allProducts.take(10).toList();
-      }
-
-      final startIndex = page * pageSize;
-      if (startIndex >= filtered.length) return const Right([]);
-
-      final paginated = filtered.skip(startIndex).take(pageSize).toList();
-
-      return Right(paginated);
-    } catch (e) {
-      return Left(ServerFailure(e.toString()));
-    }
+    return await inventoryRepository.getProducts(
+      limit: pageSize,
+      offset: page * pageSize,
+      supplierId: supplierId,
+      categoryId: category,
+    );
   }
 
   @override
@@ -52,11 +32,14 @@ class HomeRepositoryImpl implements HomeRepository {
     required int pageSize,
     String? category,
   }) async {
-    try {
-      await Future.delayed(const Duration(milliseconds: 400));
-      return const Right([]);
-    } catch (e) {
-      return Left(ServerFailure(e.toString()));
-    }
+    return await inventoryRepository.getSuppliers(
+      limit: pageSize,
+      offset: page * pageSize,
+      categoryId: category,
+    );
+  }
+  @override
+  Future<Either<Failure, List<PromoCampaign>>> getPromotions() async {
+    return await inventoryRepository.getPromotions();
   }
 }

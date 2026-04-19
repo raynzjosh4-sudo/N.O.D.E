@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:node_app/features/inventory/domain/entities/product.dart';
+import 'package:node_app/features/inventory/domain/entities/price_tier.dart';
 import 'package:node_app/features/home/presentation/pages/product_detail_screen.dart';
 import 'package:node_app/core/utils/responsive_size.dart';
 import 'package:intl/intl.dart';
@@ -23,15 +24,25 @@ class ProductGridCard extends StatelessWidget {
     // 🏗️ LAYOUT CALCULATION: Use passed ratio or fallback to product's own ratio
     final double activeRatio = aspectRatio ?? product.aspectRatio;
 
-    // 🏦 PRICE CALCULATION: Show the best (lowest) wholesale price
-    final double displayPriceValue = product.priceTiers.isNotEmpty
-        ? product.priceTiers.map((t) => t.price).reduce((a, b) => a < b ? a : b)
-        : product.srp;
+    // 🏦 PRICE CALCULATION: Pick the 'Entry Wholesale' price (first tier > 1 unit)
+    final sortedTiers = [...product.priceTiers]
+      ..sort((a, b) => a.minQuantity.compareTo(b.minQuantity));
 
-    final String formattedPrice = NumberFormat.currency(
+    final entryWholesaleTier = sortedTiers.firstWhere(
+      (t) => t.minQuantity > 1,
+      orElse: () => sortedTiers.isNotEmpty
+          ? sortedTiers.first
+          : PriceTier(minQuantity: 1, price: product.srp),
+    );
+
+    final String formattedWholesale = NumberFormat.currency(
       symbol: 'UGX ',
       decimalDigits: 0,
-    ).format(displayPriceValue);
+    ).format(entryWholesaleTier.price);
+
+    final String qtySuffix = entryWholesaleTier.minQuantity > 1
+        ? ' / ${entryWholesaleTier.minQuantity}+ units'
+        : '';
 
     return GestureDetector(
       onTap: () {
@@ -64,8 +75,8 @@ class ProductGridCard extends StatelessWidget {
 
           return Container(
             decoration: BoxDecoration(
-              color: theme.colorScheme.surface,
-              borderRadius: BorderRadius.circular(20.r),
+              color: Colors.transparent, // Minimalist look like the target
+              borderRadius: BorderRadius.circular(16.r),
             ),
             clipBehavior: Clip.hardEdge,
             child: Column(
@@ -75,16 +86,19 @@ class ProductGridCard extends StatelessWidget {
                 // Full bleed image — explicit AspectRatio drives masonry sizing
                 Hero(
                   tag: heroTag ?? product.imageUrl,
-                  child: AspectRatio(
-                    aspectRatio: activeRatio,
-                    child: CachedNetworkImage(
-                      imageUrl: product.imageUrl,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(
-                        color: theme.colorScheme.surfaceContainerHighest,
-                      ),
-                      errorWidget: (context, url, error) => Container(
-                        color: theme.colorScheme.surfaceContainerHighest,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12.r),
+                    child: AspectRatio(
+                      aspectRatio: activeRatio,
+                      child: CachedNetworkImage(
+                        imageUrl: product.imageUrl,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                          color: theme.colorScheme.surfaceContainerHighest,
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          color: theme.colorScheme.surfaceContainerHighest,
+                        ),
                       ),
                     ),
                   ),
@@ -92,62 +106,57 @@ class ProductGridCard extends StatelessWidget {
                 // Text Details
                 Padding(
                   padding: EdgeInsets.symmetric(
-                    horizontal: 12.0.w,
-                    vertical: 10.0.h,
+                    horizontal: 4.0.w,
+                    vertical: 8.0.h,
                   ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              product.name,
-                              style: GoogleFonts.outfit(
-                                fontSize: 13.sp,
-                                fontWeight: FontWeight.w600,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            SizedBox(height: 4.h),
-                            Text(
-                              formattedPrice,
-                              style: GoogleFonts.outfit(
-                                fontSize: 15.sp,
-                                fontWeight: FontWeight.w900,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                            ),
-                          ],
+                      // 1. PRICE (Primary - High Visibility)
+                      Text(
+                        formattedWholesale,
+                        style: GoogleFonts.outfit(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w900,
+                          color: theme
+                              .colorScheme
+                              .primary, // Reverting to original theme Cyan/Blue
                         ),
                       ),
-                      // Supplier circle badge
-                      Container(
-                        width: 28.w,
-                        height: 28.h,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Theme.of(context).colorScheme.surface,
-                            width: 2.w,
-                          ),
-                          color: theme.colorScheme.surfaceContainerHighest,
+
+                      // 2. PRODUCT NAME
+                      SizedBox(height: 2.h),
+                      Text(
+                        product.name,
+                        style: GoogleFonts.outfit(
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.onSurface,
                         ),
-                        child: ClipOval(
-                          child: CachedNetworkImage(
-                            imageUrl: product.supplier.imageUrl,
-                            fit: BoxFit.cover,
-                            placeholder: (context, url) => const SizedBox.shrink(),
-                            errorWidget: (context, url, error) => Icon(
-                              Icons.business_rounded,
-                              size: 14.w,
-                              color: theme.colorScheme.onSurface.withOpacity(0.2),
-                            ),
-                          ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+
+                      // 3. LOCATION / REGION
+                      SizedBox(height: 4.h),
+                      Text(
+                        product
+                            .warehouseLoc, // Using warehouse location as the "Region"
+                        style: GoogleFonts.outfit(
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.normal,
+                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                        ),
+                      ),
+
+                      // 4. BRAND / CONDITION
+                      Text(
+                        product.brand,
+                        style: GoogleFonts.outfit(
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.normal,
+                          color: theme.colorScheme.onSurface.withOpacity(0.4),
                         ),
                       ),
                     ],

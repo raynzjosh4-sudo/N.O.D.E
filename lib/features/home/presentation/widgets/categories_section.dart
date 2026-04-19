@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:node_app/features/inventory/presentation/providers/category_notifier.dart';
 import '../../../../core/theme/app_theme.dart';
 // Removed dummy import
 import 'package:node_app/core/utils/responsive_size.dart';
 
-class CategoriesSection extends StatelessWidget {
-  CategoriesSection({super.key});
+class CategoriesSection extends ConsumerWidget {
+  const CategoriesSection({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final categories = []; // Handled by dynamic providers later
+    final categoriesAsync = ref.watch(categoryNotifierProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -26,23 +28,30 @@ class CategoriesSection extends StatelessWidget {
         SizedBox(height: 12.h),
         SizedBox(
           height: 38.h,
-          child: ListView.separated(
-            clipBehavior: Clip.none,
-            scrollDirection: Axis.horizontal,
-            itemCount: categories.length,
-            separatorBuilder: (context, index) => SizedBox(width: 8.w),
-            itemBuilder: (context, index) {
-              final cat = categories[index];
-              return _buildCategoryPill(
-                context,
-                cat.name,
-                cat.subCategories.isNotEmpty 
-                    ? '${cat.subCategories.length}+ categories' 
-                    : '${cat.itemCount} items',
-                cat.imageUrl,
-                index == 0, // Active the first one by default for demo
+          child: categoriesAsync.when(
+            data: (categories) {
+              if (categories.isEmpty) return const SizedBox.shrink();
+              return ListView.separated(
+                clipBehavior: Clip.none,
+                scrollDirection: Axis.horizontal,
+                itemCount: categories.length,
+                separatorBuilder: (context, index) => SizedBox(width: 8.w),
+                itemBuilder: (context, index) {
+                  final cat = categories[index];
+                  return _buildCategoryPill(
+                    context,
+                    cat.name,
+                    cat.subCategories.isNotEmpty
+                        ? '${cat.subCategories.length}+ categories'
+                        : '${cat.itemCount} items',
+                    cat.imageUrl,
+                    index == 0, // Active the first one by default for demo
+                  );
+                },
               );
             },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, st) => const SizedBox.shrink(),
           ),
         ),
       ],

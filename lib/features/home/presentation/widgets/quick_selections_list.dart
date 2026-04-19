@@ -1,26 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:node_app/features/home/presentation/pages/product_detail_screen.dart';
-import 'package:node_app/features/home/data/product_dummy_data.dart';
 import '../../domain/entities/supplier.dart';
+import 'package:node_app/features/home/presentation/providers/home_providers.dart';
 
 import 'package:node_app/features/home/presentation/pages/suppliers/all_suppliers_screen.dart';
 import 'package:node_app/core/utils/responsive_size.dart';
+import 'package:node_app/core/widgets/node_shimmer.dart';
 
-class QuickSelectionsList extends StatelessWidget {
-  QuickSelectionsList({super.key});
+final quickSuppliersProvider = FutureProvider<List<Supplier>>((ref) async {
+  final repo = ref.watch(homeRepositoryProvider);
+  final res = await repo.getSuppliers(page: 0, pageSize: 10);
+  return res.fold((l) => [], (r) => r);
+});
+
+class QuickSelectionsList extends ConsumerWidget {
+  const QuickSelectionsList({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final List<Supplier> suppliers = ProductDummyData.products
-        .map((p) => p.supplier)
-        .fold<Map<String, Supplier>>({}, (map, supplier) {
-          map[supplier.id] = supplier;
-          return map;
-        })
-        .values
-        .toList();
+    final suppliersAsync = ref.watch(quickSuppliersProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -75,15 +76,19 @@ class QuickSelectionsList extends StatelessWidget {
         ),
         SizedBox(
           height: 40.h,
-          child: ListView.separated(
-            clipBehavior: Clip.none,
-            scrollDirection: Axis.horizontal,
-            itemCount: suppliers.length,
-            separatorBuilder: (context, index) => SizedBox(width: 8.w),
-            itemBuilder: (context, index) {
-              final supplier = suppliers[index];
-              return _buildQuickPill(context, supplier);
-            },
+          child: suppliersAsync.when(
+            data: (suppliers) => ListView.separated(
+              clipBehavior: Clip.none,
+              scrollDirection: Axis.horizontal,
+              itemCount: suppliers.length,
+              separatorBuilder: (context, index) => SizedBox(width: 8.w),
+              itemBuilder: (context, index) {
+                final supplier = suppliers[index];
+                return _buildQuickPill(context, supplier);
+              },
+            ),
+            loading: () => const SupplierSkeleton(),
+            error: (err, stack) => Center(child: Text('Error')),
           ),
         ),
       ],
@@ -100,7 +105,6 @@ class QuickSelectionsList extends StatelessWidget {
             pageBuilder: (context, animation, secondaryAnimation) =>
                 ProductDetailScreen(
                   supplierId: supplier.id,
-                  category: supplier.category,
                 ),
             transitionsBuilder: (context, animation, secondaryAnimation, child) {
               const begin = Offset(0.0, 1.0);

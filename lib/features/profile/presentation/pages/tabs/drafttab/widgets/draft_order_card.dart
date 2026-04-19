@@ -4,16 +4,20 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:node_app/core/utils/responsive_size.dart';
 import 'package:node_app/features/orders/presentation/providers/bulk_order_providers.dart';
+import 'package:node_app/features/orders/presentation/providers/wholesale_order_providers.dart';
+import 'package:node_app/features/orders/presentation/providers/draft_order_providers.dart';
 import 'package:node_app/features/profile/domain/entities/draft_order.dart';
 import 'package:node_app/features/orders/domain/repositories/order_repository.dart';
 import 'package:node_app/features/showcase/presentation/services/node_toast_manager.dart';
 import 'package:node_app/features/showcase/presentation/widgets/node_toast.dart';
 import 'package:node_app/features/profile/domain/entities/wholesale_order.dart';
 import 'package:node_app/features/profile/domain/entities/order_status.dart';
-import 'package:node_app/features/profile/domain/entities/business_profile.dart';
-import 'package:node_app/features/auth/presentation/providers/user_providers.dart';
+import 'package:node_app/features/auth/domain/entities/business_profile.dart';
+import 'package:node_app/features/profile/presentation/providers/profile_providers.dart';
 import 'package:node_app/features/profile/presentation/providers/pdf_providers.dart';
+import 'package:node_app/features/auth/data/models/business_model.dart';
 import 'package:node_app/core/pdf/order_pdf_service.dart';
+import 'package:node_app/core/error/failure.dart';
 import 'package:uuid/uuid.dart';
 
 class DraftOrderCard extends ConsumerWidget {
@@ -105,13 +109,13 @@ class DraftOrderCard extends ConsumerWidget {
               OutlinedButton(
                 onPressed: () async {
                   final result = await ref
-                      .read(orderRepositoryProvider)
-                      .deleteOrder(draft.id);
+                      .read(draftOrdersProvider.notifier)
+                      .deleteDraft(draft.id);
                   result.fold(
                     (failure) => NodeToastManager.show(
                       context,
                       title: 'Clearance Interrupted',
-                      message: failure.message,
+                      message: failure.toFriendlyMessage(),
                       status: NodeToastStatus.error,
                     ),
                     (_) {
@@ -119,10 +123,10 @@ class DraftOrderCard extends ConsumerWidget {
                         context,
                         title: 'Draft Removed',
                         message:
-                            'Configuration cleared from your local buffer.',
+                            'Configuration cleared from your cloud buffer.',
                         status: NodeToastStatus.success,
                       );
-                      ref.invalidate(userDraftsProvider);
+                      // State is already updated optimistically by notifier
                     },
                   );
                 },
@@ -149,7 +153,9 @@ class DraftOrderCard extends ConsumerWidget {
               ElevatedButton(
                 onPressed: () async {
                   final user = ref.read(userProfileProvider).value;
-                  if (user == null) {
+                  final business = ref.read(userBusinessProvider).value;
+
+                  if (user == null || business == null) {
                     NodeToastManager.show(
                       context,
                       title: 'Identity Missing',
@@ -168,12 +174,7 @@ class DraftOrderCard extends ConsumerWidget {
 
                   try {
                     // 1. Setup Business Profile
-                    final businessProfile = BusinessProfile(
-                      legalName: user.fullName,
-                      physicalAddress: user.address,
-                      city: user.city,
-                      phoneNumber: user.phoneNumber,
-                    );
+                    final businessProfile = BusinessModel.fromDrift(business);
 
                     final orderId = const Uuid().v4();
                     final pdfId = const Uuid().v4();
@@ -189,7 +190,9 @@ class DraftOrderCard extends ConsumerWidget {
                     );
 
                     // 3. Save PDF Metadata
-                    await ref.read(pdfRepositoryProvider).savePdfMetadata(
+                    await ref
+                        .read(pdfRepositoryProvider)
+                        .savePdfMetadata(
                           id: pdfId,
                           userId: user.id,
                           title: 'Order Draft: ${draft.id}',
@@ -204,19 +207,20 @@ class DraftOrderCard extends ConsumerWidget {
                       entries: draft.entries,
                       status: OrderStatus.pending,
                       pdfId: pdfId,
+                      updatedAt: DateTime.now(),
                     );
 
                     final orderResult = await ref
-                        .read(orderRepositoryProvider)
-                        .saveOrder(wholesaleOrder, user.id);
+                        .read(wholesaleOrdersProvider.notifier)
+                        .saveOrder(wholesaleOrder);
 
                     await orderResult.fold(
-                      (failure) async => throw failure.message,
+                    (failure) async => throw failure.toFriendlyMessage(),
                       (_) async {
                         // 5. Delete the Draft
                         await ref
-                            .read(orderRepositoryProvider)
-                            .deleteOrder(draft.id);
+                            .read(draftOrdersProvider.notifier)
+                            .deleteDraft(draft.id);
 
                         if (context.mounted) {
                           NodeToastManager.show(
@@ -226,8 +230,8 @@ class DraftOrderCard extends ConsumerWidget {
                                 'Your order has been moved to the active registry.',
                             status: NodeToastStatus.success,
                           );
-                          ref.invalidate(userDraftsProvider);
-                          ref.invalidate(userOrdersProvider);
+                          ref.invalidate(draftOrdersProvider);
+                          ref.invalidate(wholesaleOrdersProvider);
                           ref.invalidate(userPdfsProvider);
                         }
                       },
@@ -237,7 +241,7 @@ class DraftOrderCard extends ConsumerWidget {
                       NodeToastManager.show(
                         context,
                         title: 'Flow Interrupted',
-                        message: e.toString(),
+                        message: Failure.fromException(e).toFriendlyMessage(),
                         status: NodeToastStatus.error,
                       );
                     }

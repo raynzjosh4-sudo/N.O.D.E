@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../widgets/fashion_image_collage.dart';
 import 'package:node_app/core/utils/responsive_size.dart';
+import 'package:node_app/features/profile/presentation/pages/tabs/settingstab/pages/legal_terms_page.dart';
+import 'package:flutter/gestures.dart';
 
 class WelcomeScreen extends StatelessWidget {
   WelcomeScreen({super.key});
@@ -198,6 +200,54 @@ class WelcomeScreen extends StatelessWidget {
                       ),
                     ),
                   ),
+                  //////////////////////////////////////////////////////////////
+                  SizedBox(height: 16.h),
+                  // ⚖️ LEGAL FOOTER
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 24.w),
+                    child: Text.rich(
+                      TextSpan(
+                        text: 'By continuing, you agree to our ',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 10.sp,
+                          color: theme.colorScheme.onSurface.withOpacity(0.5),
+                          height: 1.5,
+                        ),
+                        children: [
+                          TextSpan(
+                            text: 'Terms of Service',
+                            style: TextStyle(
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = () => LegalTermsPage.show(
+                                context,
+                                termId: 'tos',
+                                title: 'Terms of Service',
+                              ),
+                          ),
+                          const TextSpan(text: ' & '),
+                          TextSpan(
+                            text: 'Privacy Policy',
+                            style: TextStyle(
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = () => LegalTermsPage.show(
+                                context,
+                                termId: 'privacy',
+                                title: 'Privacy Policy',
+                              ),
+                          ),
+                        ],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  SizedBox(height: 8.h),
+                  /////////////////////////////////////////
                 ],
               ),
             ),

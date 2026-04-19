@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:node_app/core/database/app_database.dart';
+import 'package:node_app/features/auth/domain/entities/business_profile.dart';
 import 'package:node_app/features/profile/domain/entities/wholesale_order.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -14,8 +15,6 @@ import 'widgets/pdf_footer.dart';
 import 'widgets/order_table_widget.dart';
 import 'widgets/product_details_section.dart';
 import 'pdf_utils.dart';
-
-import '../../features/profile/domain/entities/business_profile.dart';
 
 class OrderPdfService {
   static Future<PdfGenerationResult> generate({
@@ -159,27 +158,39 @@ class OrderPdfService {
                                     pw.Text(
                                       product.brand?.toUpperCase() ?? '',
                                       style: pw.TextStyle(
-                                        fontSize: 9, 
+                                        fontSize: 9,
                                         fontWeight: pw.FontWeight.bold,
                                         color: primaryColor,
                                       ),
                                     ),
                                     pw.SizedBox(width: 8),
-                                    pw.Container(width: 1, height: 8, color: PdfColor.fromHex('#3F3F46')),
+                                    pw.Container(
+                                      width: 1,
+                                      height: 8,
+                                      color: PdfColor.fromHex('#3F3F46'),
+                                    ),
                                     pw.SizedBox(width: 8),
                                     pw.Text(
                                       'REFERENCE SKU: ${product.sku ?? 'N/A'}',
-                                      style: pw.TextStyle(fontSize: 9, color: PdfColor.fromHex('#A1A1AA')),
+                                      style: pw.TextStyle(
+                                        fontSize: 9,
+                                        color: PdfColor.fromHex('#A1A1AA'),
+                                      ),
                                     ),
                                   ],
                                 ),
                               ],
                             ),
                             pw.Container(
-                              padding: const pw.EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              padding: const pw.EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
                               decoration: pw.BoxDecoration(
                                 color: primaryColor,
-                                borderRadius: const pw.BorderRadius.all(pw.Radius.circular(2)),
+                                borderRadius: const pw.BorderRadius.all(
+                                  pw.Radius.circular(2),
+                                ),
                               ),
                               child: pw.Text(
                                 '${entry.totalUnits} UNITS',
@@ -204,7 +215,6 @@ class OrderPdfService {
                   ),
 
                   pw.SizedBox(height: 20), // Reduced from 32
-
                   // Section 3: Technical Data Table (INTERNAL PADDING)
                   pw.Padding(
                     padding: const pw.EdgeInsets.symmetric(horizontal: 40),
@@ -230,7 +240,7 @@ class OrderPdfService {
             _buildGrandTotalSection(entries, primaryColor, darkBg),
 
             pw.SizedBox(height: 64),
-            
+
             // OFFICIAL DELIVERY VERIFICATION (FULL BLEED)
             _buildVerificationSection(orderId, darkBg, primaryColor),
           ],
@@ -288,7 +298,7 @@ class OrderPdfService {
           pw.Spacer(),
           _identityItem(
             'CONTACT REGISTRY',
-            user.phoneNumber ?? 'N/A',
+            businessProfile.phoneNumber ?? 'N/A',
             'NODE PARTNER NETWORK',
           ),
         ],
@@ -305,8 +315,9 @@ class OrderPdfService {
     int totalUnits = 0;
 
     for (final entry in entries) {
-      final unitPrice =
-          entry.savedProduct.product.getPriceForQuantity(entry.totalUnits);
+      final unitPrice = entry.savedProduct.product.getPriceForQuantity(
+        entry.totalUnits,
+      );
       grandTotal += unitPrice * entry.totalUnits;
       totalUnits += entry.totalUnits;
     }
@@ -320,9 +331,7 @@ class OrderPdfService {
       padding: const pw.EdgeInsets.symmetric(horizontal: 40, vertical: 24),
       decoration: pw.BoxDecoration(
         color: PdfColor.fromHex('#F4F4F5'),
-        border: pw.Border(
-          top: pw.BorderSide(color: primaryColor, width: 2),
-        ),
+        border: pw.Border(top: pw.BorderSide(color: primaryColor, width: 2)),
       ),
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -403,9 +412,7 @@ class OrderPdfService {
     return pw.Container(
       width: double.infinity,
       padding: const pw.EdgeInsets.all(32),
-      decoration: pw.BoxDecoration(
-        color: darkBg,
-      ),
+      decoration: pw.BoxDecoration(color: darkBg),
       child: pw.Row(
         children: [
           // QR CODE CONTAINER (WHITE FOR SCANNABILITY)
@@ -441,17 +448,19 @@ class OrderPdfService {
                 pw.Text(
                   'This document acts as the official ownership token for the items listed. '
                   'The customer must scan the QR code above using the N.O.D.E. app to authorize and log the delivery as successful.',
-                  style: pw.TextStyle(
-                    color: PdfColors.white,
-                    fontSize: 9,
-                  ),
+                  style: pw.TextStyle(color: PdfColors.white, fontSize: 9),
                 ),
                 pw.SizedBox(height: 12),
                 pw.Container(
-                  padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const pw.EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: pw.BoxDecoration(
                     color: PdfColor.fromHex('#27272A'),
-                    borderRadius: const pw.BorderRadius.all(pw.Radius.circular(2)),
+                    borderRadius: const pw.BorderRadius.all(
+                      pw.Radius.circular(2),
+                    ),
                   ),
                   child: pw.Text(
                     'TOKEN ID: $orderId',

@@ -2,12 +2,14 @@ import 'package:equatable/equatable.dart';
 import 'package:node_app/features/inventory/domain/entities/product.dart';
 
 class SavedProduct extends Equatable {
+  final String? id;
   final Product product;
   final int quantity;
   final String? selectedColor;
   final String? selectedSize;
 
   const SavedProduct({
+    this.id,
     required this.product,
     required this.quantity,
     this.selectedColor,
@@ -35,5 +37,5 @@ class SavedProduct extends Equatable {
   }
 
   @override
-  List<Object?> get props => [product, quantity, selectedColor, selectedSize];
+  List<Object?> get props => [id, product, quantity, selectedColor, selectedSize];
 }

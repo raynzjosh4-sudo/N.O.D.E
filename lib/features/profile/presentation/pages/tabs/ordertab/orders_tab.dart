@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:node_app/features/orders/presentation/providers/bulk_order_providers.dart';
+import 'package:node_app/features/orders/presentation/providers/wholesale_order_providers.dart';
 import 'package:node_app/features/profile/domain/entities/order_status.dart';
 import 'package:node_app/features/profile/domain/entities/wholesale_order.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -9,6 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:node_app/features/profile/presentation/utils/order_status_ui_helper.dart';
 import 'package:node_app/features/profile/presentation/pages/tabs/orderdetailpage/order_details_page.dart';
 import 'package:node_app/core/utils/responsive_size.dart';
+import 'package:node_app/core/widgets/node_error_state.dart';
 
 class OrdersTab extends ConsumerStatefulWidget {
   final ValueNotifier<Set<String>> selectedIdsNotifier;
@@ -36,13 +36,16 @@ class _OrdersTabState extends ConsumerState<OrdersTab> {
 
   @override
   Widget build(BuildContext context) {
-    final ordersAsync = ref.watch(userOrdersProvider);
+    final ordersAsync = ref.watch(wholesaleOrdersProvider);
     final theme = Theme.of(context);
     final onSurface = theme.colorScheme.onSurface;
 
     return ordersAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(child: Text('Error: $err')),
+      error: (err, stack) => NodeErrorState(
+        error: err,
+        onRetry: () => ref.refresh(wholesaleOrdersProvider),
+      ),
       data: (orders) {
         if (orders.isEmpty) {
           return Center(
@@ -177,6 +180,34 @@ class _OrderCard extends StatelessWidget {
                           fontSize: 11.sp,
                           color: onSurface.withOpacity(0.4),
                         ),
+                      ),
+                      SizedBox(height: 4.h),
+                      Row(
+                        children: [
+                          Icon(
+                            order.status == OrderStatus.pending
+                                ? Icons.hourglass_empty_rounded
+                                : Icons.check_circle_outline_rounded,
+                            size: 10.w,
+                            color: order.status == OrderStatus.pending
+                                ? onSurface.withOpacity(0.4)
+                                : Colors.green,
+                          ),
+                          SizedBox(width: 4.w),
+                          Text(
+                            order.status == OrderStatus.pending
+                                ? 'NOT SENT'
+                                : 'SENT TO SUPPLIER',
+                            style: GoogleFonts.outfit(
+                              fontSize: 9.sp,
+                              fontWeight: FontWeight.bold,
+                              color: order.status == OrderStatus.pending
+                                  ? onSurface.withOpacity(0.4)
+                                  : Colors.green,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

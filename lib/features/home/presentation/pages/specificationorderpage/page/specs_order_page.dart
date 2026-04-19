@@ -6,21 +6,22 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:node_app/core/domain/entities/location.dart';
 import 'package:node_app/core/pdf/order_pdf_service.dart';
 import 'package:node_app/features/inventory/domain/entities/trading_terms.dart';
-import 'package:node_app/features/profile/domain/entities/business_profile.dart';
 import 'package:node_app/features/profile/domain/entities/draft_order.dart';
 import 'package:node_app/features/profile/presentation/providers/pdf_providers.dart';
 import '../../../../../orders/presentation/providers/bulk_order_providers.dart';
+import '../../../../../orders/presentation/providers/draft_order_providers.dart';
+import '../../../../../orders/presentation/providers/wholesale_order_providers.dart';
 import '../order_models.dart';
 import '../widgets/order_group_builder.dart';
-import '../widgets/order_section_label.dart';
 import '../widgets/order_summary_table.dart';
 import '../widgets/saved_item_picker.dart';
 import '../widgets/order_confirmation_sheet.dart';
 import '../widgets/pdf_naming_sheet.dart';
 import 'package:node_app/core/utils/responsive_size.dart';
-import 'package:node_app/features/auth/presentation/providers/user_providers.dart';
 import 'package:node_app/features/profile/presentation/pages/tabs/settingstab/pages/profile_info_page.dart';
+import 'package:node_app/features/profile/presentation/providers/profile_providers.dart';
 import 'package:node_app/features/profile/domain/entities/wholesale_order.dart';
+import 'package:node_app/features/auth/data/models/business_model.dart';
 import 'package:node_app/features/profile/domain/entities/order_status.dart';
 import 'package:node_app/features/profile/domain/entities/saved_product.dart';
 import 'package:node_app/features/inventory/domain/entities/product.dart';
@@ -34,6 +35,9 @@ import '../widgets/specs_order_header.dart';
 import '../widgets/specs_order_summary_header.dart';
 import '../widgets/specs_confirmed_groups_list.dart';
 import '../widgets/specs_order_actions.dart';
+import 'package:node_app/features/saved_items/presentation/providers/saved_items_provider.dart';
+import 'package:node_app/core/services/notification_service.dart';
+import 'package:node_app/core/error/failure.dart';
 
 class SpecsOrderSheet extends ConsumerStatefulWidget {
   final String productName;
@@ -162,7 +166,9 @@ class _SpecsOrderSheetState extends ConsumerState<SpecsOrderSheet> {
 
     final dummyProduct = Product(
       id: widget.product?.id ?? const Uuid().v4(),
-      sku: widget.product?.sku ?? 'DRAFT-${DateTime.now().millisecondsSinceEpoch}',
+      sku:
+          widget.product?.sku ??
+          'DRAFT-${DateTime.now().millisecondsSinceEpoch}',
       name: widget.productName,
       brand: widget.brand,
       imageUrl: widget.imageUrl ?? '',
@@ -191,7 +197,9 @@ class _SpecsOrderSheetState extends ConsumerState<SpecsOrderSheet> {
       searchKeywords: const [],
       slug: '',
       support: const ProductSupport(whatsapp: '', phone: '', email: ''),
-      tradingTerms: widget.product?.tradingTerms ?? const TradingTerms(id: '', content: ''),
+      tradingTerms:
+          widget.product?.tradingTerms ??
+          const TradingTerms(id: '', content: ''),
     );
 
     final savedProduct = SavedProduct(
@@ -209,20 +217,21 @@ class _SpecsOrderSheetState extends ConsumerState<SpecsOrderSheet> {
     );
 
     final draftOrder = DraftOrder(
-      id: name,
+      id: const Uuid().v4(), // UUID required by Supabase — name shown in toast
       entries: [orderEntry],
       lastModified: DateTime.now(),
     );
 
-    final repository = ref.read(orderRepositoryProvider);
-    final result = await repository.saveDraft(draftOrder, user.id);
+    final result = await ref
+        .read(draftOrdersProvider.notifier)
+        .saveDraft(draftOrder);
 
     if (!mounted) return;
     result.fold(
       (failure) => NodeToastManager.show(
         context,
         title: 'Registry Error',
-        message: failure.message,
+        message: failure.toFriendlyMessage(),
         status: NodeToastStatus.error,
       ),
       (_) {
@@ -236,7 +245,7 @@ class _SpecsOrderSheetState extends ConsumerState<SpecsOrderSheet> {
           _isNamingBulk = false;
           _bulkNameController.clear();
         });
-        ref.invalidate(userDraftsProvider);
+        ref.invalidate(draftOrdersProvider);
       },
     );
   }
@@ -244,7 +253,7 @@ class _SpecsOrderSheetState extends ConsumerState<SpecsOrderSheet> {
   Future<void> _handleBulkButton() async {
     if (_confirmedGroups.isEmpty) return;
 
-    final drafts = ref.read(userDraftsProvider).value ?? [];
+    final drafts = ref.read(draftOrdersProvider).value ?? [];
 
     if (drafts.isEmpty) {
       // No existing drafts -> show naming field in sheet
@@ -267,21 +276,28 @@ class _SpecsOrderSheetState extends ConsumerState<SpecsOrderSheet> {
       category: widget.category,
       subCategory: widget.subCategory,
       imageUrl: widget.imageUrl,
-      availableColors: widget.availableColors.map((c) => ProductColor(
-        name: c.label,
-        hexCode: ColorUtils.toHex(c.color),
-      )).toList(),
-      availableSizes: widget.availableSizes.map((s) => ProductSize(
-        name: s,
-        abbreviation: s,
-      )).toList(),
+      availableColors: widget.availableColors
+          .map(
+            (c) =>
+                ProductColor(name: c.label, hexCode: ColorUtils.toHex(c.color)),
+          )
+          .toList(),
+      availableSizes: widget.availableSizes
+          .map((s) => ProductSize(name: s, abbreviation: s))
+          .toList(),
       availableMaterials: widget.product?.availableMaterials,
       srp: widget.product?.srp,
-      priceTiersJson: widget.product != null ? jsonEncode(widget.product!.priceTiers.map((t) => t.toJson()).toList()) : null,
+      priceTiersJson: widget.product != null
+          ? jsonEncode(
+              widget.product!.priceTiers.map((t) => t.toJson()).toList(),
+            )
+          : null,
       currentStock: widget.product?.currentStock,
       leadTimeDays: widget.product?.leadTimeDays,
       seoDescription: widget.product?.seoDescription,
-      tradingTermsJson: widget.product != null ? jsonEncode(widget.product!.tradingTerms.toJson()) : null,
+      tradingTermsJson: widget.product != null
+          ? jsonEncode(widget.product!.tradingTerms.toJson())
+          : null,
       variantLabel: widget.variantLabel,
       confirmedGroups: _confirmedGroups,
     );
@@ -292,7 +308,7 @@ class _SpecsOrderSheetState extends ConsumerState<SpecsOrderSheet> {
         NodeToastManager.show(
           context,
           title: 'Storage Error',
-          message: failure.message,
+          message: failure.toFriendlyMessage(),
           status: NodeToastStatus.error,
         );
       },
@@ -317,7 +333,9 @@ class _SpecsOrderSheetState extends ConsumerState<SpecsOrderSheet> {
 
     final dummyProduct = Product(
       id: widget.product?.id ?? const Uuid().v4(),
-      sku: widget.product?.sku ?? 'DRAFT-${DateTime.now().millisecondsSinceEpoch}',
+      sku:
+          widget.product?.sku ??
+          'DRAFT-${DateTime.now().millisecondsSinceEpoch}',
       name: widget.productName,
       brand: widget.brand,
       imageUrl: widget.imageUrl ?? '',
@@ -346,7 +364,9 @@ class _SpecsOrderSheetState extends ConsumerState<SpecsOrderSheet> {
       searchKeywords: const [],
       slug: '',
       support: const ProductSupport(whatsapp: '', phone: '', email: ''),
-      tradingTerms: widget.product?.tradingTerms ?? const TradingTerms(id: '', content: ''),
+      tradingTerms:
+          widget.product?.tradingTerms ??
+          const TradingTerms(id: '', content: ''),
     );
 
     final savedProduct = SavedProduct(
@@ -363,7 +383,7 @@ class _SpecsOrderSheetState extends ConsumerState<SpecsOrderSheet> {
           .toList(),
     );
 
-    final repository = ref.read(orderRepositoryProvider);
+    final notifier = ref.read(draftOrdersProvider.notifier);
     bool hasError = false;
 
     if (pickerResult.newDraftName != null) {
@@ -373,7 +393,9 @@ class _SpecsOrderSheetState extends ConsumerState<SpecsOrderSheet> {
       return;
     }
 
-    if (pickerResult.selectedDrafts == null || pickerResult.selectedDrafts!.isEmpty) return;
+    if (pickerResult.selectedDrafts == null ||
+        pickerResult.selectedDrafts!.isEmpty)
+      return;
     final picked = pickerResult.selectedDrafts!;
 
     for (final existingDraft in picked) {
@@ -384,22 +406,19 @@ class _SpecsOrderSheetState extends ConsumerState<SpecsOrderSheet> {
         lastModified: DateTime.now(),
       );
 
-      final result = await repository.saveDraft(updatedDraft, user.id);
-      
-      result.fold(
-        (failure) {
-          hasError = true;
-          if (mounted) {
-            NodeToastManager.show(
-              context,
-              title: 'Registry Error',
-              message: failure.message,
-              status: NodeToastStatus.error,
-            );
-          }
-        },
-        (_) {},
-      );
+      final result = await notifier.saveDraft(updatedDraft);
+
+      result.fold((failure) {
+        hasError = true;
+        if (mounted) {
+          NodeToastManager.show(
+            context,
+            title: 'Registry Error',
+            message: failure.toFriendlyMessage(),
+            status: NodeToastStatus.error,
+          );
+        }
+      }, (_) {});
     }
 
     if (!hasError && mounted) {
@@ -409,12 +428,54 @@ class _SpecsOrderSheetState extends ConsumerState<SpecsOrderSheet> {
         message: 'Configuration successfully added to selected draft(s).',
         status: NodeToastStatus.success,
       );
-      ref.invalidate(userDraftsProvider);
+      ref.invalidate(draftOrdersProvider);
     }
   }
 
   Future<void> _saveDirectly() async {
     if (_confirmedGroups.isEmpty) return;
+
+    // 💼 CLOUD SYNC: Persist all configured variants to Supabase saved_items
+    if (widget.product != null) {
+      final notifier = ref.read(savedItemsProvider.notifier);
+      int saveCount = 0;
+      bool hasError = false;
+
+      for (final group in _confirmedGroups) {
+        for (final entry in group.sizeQtys.entries) {
+          if (entry.value > 0) {
+            final result = await notifier.saveItem(
+              product: widget.product!,
+              quantity: entry.value,
+              color: group.color.label,
+              size: entry.key,
+            );
+
+            result.fold((_) => hasError = true, (_) => saveCount++);
+          }
+        }
+      }
+
+      if (mounted) {
+        if (hasError) {
+          NodeToastManager.show(
+            context,
+            title: 'Partial Save',
+            message: 'Some items could not be synced to the cloud.',
+            status: NodeToastStatus.warning,
+          );
+        } else if (saveCount > 0) {
+          NodeToastManager.show(
+            context,
+            title: 'Saved to Bag',
+            message:
+                'Successfully synced $saveCount variants to your cloud inventory.',
+            status: NodeToastStatus.success,
+          );
+        }
+      }
+    }
+
     final dateTag = DateFormat('MMM d').format(DateTime.now());
     final autoName = '${widget.productName} · $dateTag';
     await _saveToBulkOrders(autoName);
@@ -447,12 +508,10 @@ class _SpecsOrderSheetState extends ConsumerState<SpecsOrderSheet> {
 
     if (chosenName == null || !mounted) return;
 
-    final businessProfile = BusinessProfile(
-      legalName: user.fullName,
-      physicalAddress: user.address,
-      city: user.city,
-      phoneNumber: user.phoneNumber,
-    );
+    final business = ref.read(userBusinessProvider).value;
+    if (business == null) return;
+
+    final businessProfile = BusinessModel.fromDrift(business);
 
     final orderEntry = ProductOrderEntry(
       savedProduct: SavedProduct(
@@ -505,7 +564,7 @@ class _SpecsOrderSheetState extends ConsumerState<SpecsOrderSheet> {
       NodeToastManager.show(
         context,
         title: 'Archive Failure',
-        message: e.toString(),
+        message: Failure.fromException(e).toFriendlyMessage(),
         status: NodeToastStatus.error,
       );
     }
@@ -544,10 +603,8 @@ class _SpecsOrderSheetState extends ConsumerState<SpecsOrderSheet> {
       imageUrl: widget.imageUrl ?? '',
       availableColors: widget.availableColors
           .map(
-            (c) => ProductColor(
-              name: c.label,
-              hexCode: ColorUtils.toHex(c.color),
-            ),
+            (c) =>
+                ProductColor(name: c.label, hexCode: ColorUtils.toHex(c.color)),
           )
           .toList(),
       availableSizes: widget.availableSizes
@@ -555,7 +612,9 @@ class _SpecsOrderSheetState extends ConsumerState<SpecsOrderSheet> {
           .toList(),
       variantLabel: widget.variantLabel,
       support: const ProductSupport(whatsapp: '', phone: '', email: ''),
-      tradingTerms: widget.product?.tradingTerms ?? const TradingTerms(id: '', content: ''),
+      tradingTerms:
+          widget.product?.tradingTerms ??
+          const TradingTerms(id: '', content: ''),
     );
   }
 
@@ -564,11 +623,14 @@ class _SpecsOrderSheetState extends ConsumerState<SpecsOrderSheet> {
 
     final user = await ref.read(userProfileProvider.future);
 
+    final business = ref.read(userBusinessProvider).value;
+
     if (user == null ||
+        business == null ||
         user.fullName.trim().isEmpty ||
-        user.phoneNumber.trim().isEmpty ||
-        user.city.trim().isEmpty ||
-        user.address.trim().isEmpty) {
+        business.phoneNumber?.trim().isEmpty == true ||
+        business.city?.trim().isEmpty == true ||
+        business.physicalAddress?.trim().isEmpty == true) {
       if (!mounted) return;
       ProfileInfoPage.show(
         context,
@@ -586,7 +648,7 @@ class _SpecsOrderSheetState extends ConsumerState<SpecsOrderSheet> {
       totalUnits: _totalUnits,
       userName: user.fullName,
       onConfirm: () async {
-        final orderRepository = ref.read(orderRepositoryProvider);
+        final orderNotifier = ref.read(wholesaleOrdersProvider.notifier);
         final orderId = const Uuid().v4();
         final now = DateTime.now();
         final autoPdfName =
@@ -601,12 +663,10 @@ class _SpecsOrderSheetState extends ConsumerState<SpecsOrderSheet> {
         );
 
         try {
-          final businessProfile = BusinessProfile(
-            legalName: user.fullName,
-            physicalAddress: user.address,
-            city: user.city,
-            phoneNumber: user.phoneNumber,
-          );
+          final businessEntry = ref.read(userBusinessProvider).value;
+          if (businessEntry == null) return;
+
+          final businessProfile = BusinessModel.fromDrift(businessEntry);
 
           final productEntity = widget.product ?? _createProductShell(user);
           final orderEntry = ProductOrderEntry(
@@ -643,11 +703,13 @@ class _SpecsOrderSheetState extends ConsumerState<SpecsOrderSheet> {
             status: OrderStatus.pending,
             entries: [orderEntry],
             pdfId: pdfId,
+            productId: widget.product?.id,
+            supplierId: widget.product?.supplier.id,
+            updatedAt: now,
           );
 
-          final result = await orderRepository.saveOrder(
+          final result = await orderNotifier.saveOrder(
             wholesaleOrder,
-            user.id,
           );
 
           if (!mounted) return;
@@ -655,10 +717,18 @@ class _SpecsOrderSheetState extends ConsumerState<SpecsOrderSheet> {
             (failure) => NodeToastManager.show(
               context,
               title: 'Order Interrupted',
-              message: failure.message,
+              message: failure.toFriendlyMessage(),
               status: NodeToastStatus.error,
             ),
             (_) {
+              // 🔔 Trigger Local Notification
+              NotificationService.showConfirmationAlert(
+                title: 'Wholesale Order Created',
+                body:
+                    'Your order for ${widget.productName} has been archived to Profile/Orders.',
+                payload: orderId,
+              );
+
               NodeToastManager.show(
                 context,
                 title: 'Order Created',
@@ -667,6 +737,7 @@ class _SpecsOrderSheetState extends ConsumerState<SpecsOrderSheet> {
                 status: NodeToastStatus.success,
               );
               ref.invalidate(userPdfsProvider);
+              ref.invalidate(wholesaleOrdersProvider);
               Navigator.of(context).pop();
             },
           );
@@ -675,7 +746,7 @@ class _SpecsOrderSheetState extends ConsumerState<SpecsOrderSheet> {
           NodeToastManager.show(
             context,
             title: 'Generation Failed',
-            message: e.toString(),
+            message: Failure.fromException(e).toFriendlyMessage(),
             status: NodeToastStatus.error,
           );
         }

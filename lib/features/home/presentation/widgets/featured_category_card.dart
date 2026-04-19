@@ -1,26 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:node_app/core/utils/responsive_size.dart';
 import 'package:node_app/features/home/presentation/pages/categories/categories_page.dart';
-import 'package:node_app/features/home/data/category_dummy_data.dart';
+// Removed dummy import
 import 'package:node_app/features/home/presentation/pages/categories/models/category_model.dart';
 import 'package:node_app/features/home/presentation/pages/product_detail_screen.dart';
+import 'package:node_app/features/inventory/presentation/providers/category_notifier.dart';
+import 'package:node_app/core/widgets/node_shimmer.dart';
+import 'package:node_app/core/widgets/node_error_state.dart';
 
-class FeaturedCategoryCard extends StatefulWidget {
+class FeaturedCategoryCard extends ConsumerStatefulWidget {
   final void Function(CategoryItem)? onCategoryChanged;
   const FeaturedCategoryCard({super.key, this.onCategoryChanged});
-
   @override
-  State<FeaturedCategoryCard> createState() => _FeaturedCategoryCardState();
+  ConsumerState<FeaturedCategoryCard> createState() =>
+      _FeaturedCategoryCardState();
 }
 
-class _FeaturedCategoryCardState extends State<FeaturedCategoryCard> {
+class _FeaturedCategoryCardState extends ConsumerState<FeaturedCategoryCard> {
   late PageController _pageController;
   double _currentPage = 0.0;
   int _lastReportedPage = 0;
 
-  final List<CategoryItem> _featuredCategories =
-      CategoryDummyData.topSearchedCategories;
+  List<CategoryItem> _featuredCategories = [];
 
   @override
   void initState() {
@@ -30,14 +33,16 @@ class _FeaturedCategoryCardState extends State<FeaturedCategoryCard> {
         if (mounted) {
           setState(() {
             _currentPage = _pageController.page!;
-            
+
             // Notify parent if the centered category changed
             final int centeredIndex = _currentPage.round();
-            if (centeredIndex != _lastReportedPage && 
-                centeredIndex >= 0 && 
+            if (centeredIndex != _lastReportedPage &&
+                centeredIndex >= 0 &&
                 centeredIndex < _featuredCategories.length) {
               _lastReportedPage = centeredIndex;
-              widget.onCategoryChanged?.call(_featuredCategories[centeredIndex]);
+              widget.onCategoryChanged?.call(
+                _featuredCategories[centeredIndex],
+              );
             }
           });
         }
@@ -52,16 +57,32 @@ class _FeaturedCategoryCardState extends State<FeaturedCategoryCard> {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 280.h,
-      child: PageView.builder(
-        controller: _pageController,
-        clipBehavior: Clip.none,
-        itemCount: _featuredCategories.length,
-        itemBuilder: (context, index) {
-          double relativePosition = index - _currentPage;
-          return _buildAnimatedCard(index, relativePosition);
-        },
+    final categoriesAsync = ref.watch(categoryNotifierProvider);
+
+    return categoriesAsync.when(
+      data: (categories) {
+        if (categories.isEmpty) return const SizedBox.shrink();
+
+        _featuredCategories = categories;
+
+        return SizedBox(
+          height: 280.h,
+          child: PageView.builder(
+            controller: _pageController,
+            clipBehavior: Clip.none,
+            itemCount: _featuredCategories.length,
+            itemBuilder: (context, index) {
+              double relativePosition = index - _currentPage;
+              return _buildAnimatedCard(index, relativePosition);
+            },
+          ),
+        );
+      },
+      loading: () => const CategorySkeleton(),
+      error: (e, st) => NodeErrorState(
+        error: e,
+        onRetry: () => ref.read(categoryNotifierProvider.notifier).refresh(),
+        compact: true,
       ),
     );
   }

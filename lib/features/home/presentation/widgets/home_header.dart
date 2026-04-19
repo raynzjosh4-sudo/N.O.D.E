@@ -3,13 +3,19 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:node_app/features/auth/presentation/widgets/auth_prompt_sheet.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../profile/presentation/pages/profile/profile_page.dart';
 import 'package:node_app/core/utils/responsive_size.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:node_app/features/auth/presentation/providers/auth_state_provider.dart';
 
-class HomeHeader extends StatelessWidget {
+import 'package:go_router/go_router.dart';
+import 'package:node_app/features/profile/presentation/providers/profile_providers.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+
+class HomeHeader extends ConsumerWidget {
   HomeHeader({super.key});
 
   void _showAuthPrompt(BuildContext context) {
+    debugPrint('👉 [UI] Authentication required. Showing Login Sheet.');
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -20,47 +26,91 @@ class HomeHeader extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final appColors = AppColors.of(context);
+    final isAuthenticated = ref.watch(isAuthenticatedProvider);
+    final userProfile = ref.watch(userProfileProvider).value;
+    final businessProfile = ref.watch(userBusinessProvider).value;
 
-    // 🔔 Mock authentication state for demonstration
-    const bool isLoggedOut = true;
+    // Determine Greeting Name
+    final displayName =
+        userProfile?.fullName ?? businessProfile?.legalName ?? 'Guest';
+
+    // 🔄 Sync Trigger... (omitted for brevity)
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // Profile Avatar
+        // Profile Avatar & Greeting
         GestureDetector(
           onTap: () {
-            Navigator.of(context).push(
-              PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) =>
-                    const ProfilePage(),
-                transitionsBuilder:
-                    (context, animation, secondaryAnimation, child) {
-                      const begin = Offset(-1.0, 0.0);
-                      const end = Offset.zero;
-                      const curve = Curves.easeOutQuint;
-                      var tween = Tween(
-                        begin: begin,
-                        end: end,
-                      ).chain(CurveTween(curve: curve));
-                      return SlideTransition(
-                        position: animation.drive(tween),
-                        child: child,
-                      );
-                    },
-                transitionDuration: Duration(milliseconds: 450),
-              ),
-            );
+            if (!isAuthenticated) {
+              _showAuthPrompt(context);
+              return;
+            }
+            context.push('/profile');
           },
-          child: CircleAvatar(
-            radius: 18,
-            backgroundColor: theme.colorScheme.surfaceContainerHighest,
-            backgroundImage: NetworkImage(
-              'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop',
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircleAvatar(
+                radius: 18.w,
+                backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                child: !isAuthenticated
+                    ? Icon(
+                        Icons.person_outline_rounded,
+                        size: 20.w,
+                        color: theme.colorScheme.onSurface.withOpacity(0.5),
+                      )
+                    : ClipOval(
+                        child: CachedNetworkImage(
+                          imageUrl: userProfile?.profilePicUrl ?? '',
+                          width: 36.w,
+                          height: 36.w,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Center(
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: theme.colorScheme.primary.withOpacity(0.2),
+                            ),
+                          ),
+                          errorWidget: (context, url, error) => Icon(
+                            Icons.person_rounded,
+                            size: 20.w,
+                            color: theme.colorScheme.onSurface.withOpacity(0.3),
+                          ),
+                        ),
+                      ),
+              ),
+              SizedBox(width: 10.w),
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Hello,',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w500,
+                        color: theme.colorScheme.onSurface.withOpacity(0.4),
+                      ),
+                    ),
+                    Text(
+                      displayName,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                      style: GoogleFonts.outfit(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w800,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
 
@@ -70,7 +120,7 @@ class HomeHeader extends StatelessWidget {
           children: [
             SvgPicture.asset(
               'assets/icon/nodeicon.svg',
-              width: 22.w, // Slightly larger for better branding visibility
+              width: 22.w,
               height: 22.w,
             ),
             SizedBox(width: 6.w),
@@ -89,10 +139,14 @@ class HomeHeader extends StatelessWidget {
         // Notification Bell
         GestureDetector(
           onTap: () {
-            if (isLoggedOut) {
+            debugPrint(
+              '👉 [UI] Notification Icon tapped. Auth State: $isAuthenticated',
+            );
+            if (!isAuthenticated) {
               _showAuthPrompt(context);
               return;
             }
+            context.push('/notifications');
           },
           child: Stack(
             children: [

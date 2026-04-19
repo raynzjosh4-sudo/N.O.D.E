@@ -122,17 +122,10 @@ class _AllSuppliersScreenState extends ConsumerState<AllSuppliersScreen> {
               ),
             ),
             SliverPadding(
-              padding: EdgeInsets.fromLTRB(16, 8, 16, 24),
-              sliver: PagedSliverGrid<int, Supplier>(
+              padding: EdgeInsets.symmetric(vertical: 8.h),
+              sliver: PagedSliverList<int, Supplier>(
                 state: state,
                 fetchNextPage: fetchNextPage,
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 16,
-                  childAspectRatio:
-                      0.7, // Slightly taller to account for less internal spacing
-                ),
                 builderDelegate: PagedChildBuilderDelegate<Supplier>(
                   itemBuilder: (context, supplier, index) =>
                       _buildSupplierItem(context, supplier),
@@ -160,14 +153,13 @@ class _AllSuppliersScreenState extends ConsumerState<AllSuppliersScreen> {
   Widget _buildSupplierItem(BuildContext context, Supplier supplier) {
     final theme = Theme.of(context);
 
-    return GestureDetector(
+    return InkWell(
       onTap: () {
         Navigator.of(context).push(
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) =>
                 ProductDetailScreen(
                   supplierId: supplier.id,
-                  category: supplier.category,
                 ),
             transitionsBuilder:
                 (context, animation, secondaryAnimation, child) {
@@ -188,33 +180,80 @@ class _AllSuppliersScreenState extends ConsumerState<AllSuppliersScreen> {
         );
       },
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 72.w,
-            height: 72.h,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: theme.colorScheme.onSurface.withOpacity(0.1),
-                width: 1.w,
-              ),
-              image: DecorationImage(
-                image: NetworkImage(supplier.imageUrl),
-                fit: BoxFit.cover,
-              ),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+            child: Row(
+              children: [
+                // 📸 CIRCULAR AVATAR
+                Container(
+                  width: 56.w,
+                  height: 56.h,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: theme.colorScheme.onSurface.withOpacity(0.08),
+                      width: 1.5.w,
+                    ),
+                    image: DecorationImage(
+                      image: NetworkImage(supplier.imageUrl),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 16.w),
+                // 📝 SUPPLIER INFO
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            supplier.name,
+                            style: GoogleFonts.outfit(
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w700,
+                              color: theme.colorScheme.onSurface,
+                            ),
+                          ),
+                          Text(
+                            'Active',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 11.sp,
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 4.h),
+                      Text(
+                        supplier.category,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 13.sp,
+                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(width: 8.w),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 14.w,
+                  color: theme.colorScheme.onSurface.withOpacity(0.2),
+                ),
+              ],
             ),
           ),
-          SizedBox(height: 8.h),
-          Text(
-            supplier.name,
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 12.sp, // Slightly smaller text for better fit
-              fontWeight: FontWeight.w600,
-              color: theme.colorScheme.onSurface,
+          Padding(
+            padding: EdgeInsets.only(left: 88.w), // Aligns with the text start like WhatsApp
+            child: Divider(
+              height: 1,
+              thickness: 1,
+              color: theme.colorScheme.onSurface.withOpacity(0.05),
             ),
           ),
         ],

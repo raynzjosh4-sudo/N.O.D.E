@@ -13,26 +13,31 @@ class DeleteConfirmationResult {
 }
 
 class NodeDeleteConfirmationSheet extends StatefulWidget {
-  final int orderCount;
+  final int itemCount;
+  final String itemType;
   final bool hasPdfs;
 
   const NodeDeleteConfirmationSheet({
     super.key,
-    required this.orderCount,
+    required this.itemCount,
+    this.itemType = 'order',
     required this.hasPdfs,
   });
 
   static Future<DeleteConfirmationResult?> show(
     BuildContext context, {
-    required int orderCount,
+    required int itemCount,
+    String itemType = 'order',
     required bool hasPdfs,
+    required int orderCount,
   }) {
     return showModalBottomSheet<DeleteConfirmationResult>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => NodeDeleteConfirmationSheet(
-        orderCount: orderCount,
+        itemCount: itemCount,
+        itemType: itemType,
         hasPdfs: hasPdfs,
       ),
     );
@@ -90,7 +95,7 @@ class _NodeDeleteConfirmationSheetState
           ),
           SizedBox(height: 20.h),
           Text(
-            'You are about to delete ${widget.orderCount} order${widget.orderCount > 1 ? 's' : ''} from your registry. This action cannot be undone.',
+            'You are about to delete ${widget.itemCount} ${widget.itemType}${widget.itemCount > 1 ? 's' : ''} from your registry. This action cannot be undone.',
             style: GoogleFonts.plusJakartaSans(
               fontSize: 14.sp,
               fontWeight: FontWeight.w500,

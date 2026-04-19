@@ -36,14 +36,14 @@ class PdfTheme {
 
   static final headerLabelStyle = pw.TextStyle(
     color: PdfColor.fromHex('#999999'),
-    fontSize: 7,
+    fontSize: 9.5,
     letterSpacing: 1.5,
     fontWeight: pw.FontWeight.bold,
   );
 
   static final dataValueStyle = pw.TextStyle(
     color: bodyTextColor,
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: pw.FontWeight.bold,
   );
 }

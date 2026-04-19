@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:node_app/core/utils/responsive_size.dart';
-import 'package:node_app/features/orders/presentation/providers/bulk_order_providers.dart';
+import 'package:node_app/features/orders/presentation/providers/wholesale_order_providers.dart';
 import 'package:node_app/features/profile/domain/entities/order_status.dart';
 import 'package:node_app/features/profile/domain/entities/wholesale_order.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:node_app/features/showcase/presentation/services/node_toast_manager.dart';
 import 'package:node_app/features/showcase/presentation/widgets/node_toast.dart';
+import 'package:node_app/features/home/presentation/pages/notifications/presentation/providers/notification_providers.dart';
 
 class ScanPage extends ConsumerStatefulWidget {
   const ScanPage({super.key});
@@ -30,7 +31,7 @@ class _ScanPageState extends ConsumerState<ScanPage> {
     if (_isProcessing) return;
     setState(() => _isProcessing = true);
 
-    final repository = ref.read(orderRepositoryProvider);
+    final repository = ref.read(wholesaleOrderRepositoryProvider);
     final result = await repository.getOrderById(orderId);
 
     result.fold(
@@ -38,9 +39,10 @@ class _ScanPageState extends ConsumerState<ScanPage> {
         NodeToastManager.show(
           context,
           title: 'Scan Error',
-          message: f.message,
+          message: f.toFriendlyMessage(),
           status: NodeToastStatus.error,
         );
+
         setState(() => _isProcessing = false);
       },
       (order) {
@@ -67,7 +69,7 @@ class _ScanPageState extends ConsumerState<ScanPage> {
       builder: (context) => _OrderScanResultSheet(
         order: order,
         onStatusUpdated: () {
-          ref.invalidate(userOrdersProvider);
+          ref.invalidate(wholesaleOrdersProvider);
           setState(() => _isProcessing = false);
           Navigator.pop(context); // Close sheet
         },
@@ -114,7 +116,11 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                   color: Colors.black.withOpacity(0.5),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.close_rounded, color: Colors.white, size: 24.w),
+                child: Icon(
+                  Icons.close_rounded,
+                  color: Colors.white,
+                  size: 24.w,
+                ),
               ),
             ),
           ),
@@ -241,39 +247,72 @@ class _OrderScanResultSheet extends ConsumerWidget {
             ),
           ),
           SizedBox(height: 32.h),
-          _buildInfoRow('Current Status', order.status.name.toUpperCase(), primary),
+          _buildInfoRow(
+            'Current Status',
+            order.status.name.toUpperCase(),
+            primary,
+          ),
           SizedBox(height: 12.h),
           _buildInfoRow('Total Items', '${order.totalItems}', onSurface),
           SizedBox(height: 12.h),
           _buildInfoRow('Total Units', '${order.totalUnits}', onSurface),
           SizedBox(height: 40.h),
-          
-          if (order.status == OrderStatus.processing)
+
+          if (order.status == OrderStatus.processing ||
+              order.status == OrderStatus.submitted)
             ElevatedButton(
               onPressed: () async {
                 final result = await ref
-                    .read(orderRepositoryProvider)
-                    .updateOrderStatus(order.id, OrderStatus.shipped);
+                    .read(wholesaleOrderRepositoryProvider)
+                    .updateOrderStatus(order.id, OrderStatus.completed);
+
                 result.fold(
-                  (f) => NodeToastManager.show(context, title: 'Error', message: f.message, status: NodeToastStatus.error),
+                  (f) => NodeToastManager.show(
+                    context,
+                    title: 'Error',
+                    message: f.toFriendlyMessage(),
+                    status: NodeToastStatus.error,
+                  ),
+
                   (_) {
-                    NodeToastManager.show(context, title: 'Success', message: 'Order marked as shipped', status: NodeToastStatus.success);
+                    NodeToastManager.show(
+                      context,
+                      title: 'Success',
+                      message: 'Order marked as completed',
+                      status: NodeToastStatus.success,
+                    );
+
+                    // 🚨 Security & Audit Broadcast: Alert all global administrators
+                    // whenever a delivery scanning event finalizes organically.
+                    ref.read(notificationRepositoryProvider).notifyAdmins(
+                      title: 'Order Scanned & Delivered',
+                      description: 'Order #${order.id} was successfully scanned and marked completed.',
+                      category: 'security',
+                    );
+
                     onStatusUpdated();
                   },
+
                 );
               },
-              child: const Text('MARK AS SHIPPED'),
+              child: const Text('MARK AS COMPLETED'),
+
               style: ElevatedButton.styleFrom(
                 backgroundColor: primary,
                 foregroundColor: Colors.white,
                 minimumSize: Size(double.infinity, 56.h),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16.r),
+                ),
               ),
             )
           else
             Text(
               'No transition available for this status.',
-              style: TextStyle(color: onSurface.withOpacity(0.5), fontSize: 13.sp),
+              style: TextStyle(
+                color: onSurface.withOpacity(0.5),
+                fontSize: 13.sp,
+              ),
             ),
         ],
       ),
@@ -284,8 +323,17 @@ class _OrderScanResultSheet extends ConsumerWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: TextStyle(color: color.withOpacity(0.5), fontWeight: FontWeight.w600)),
-        Text(value, style: GoogleFonts.outfit(fontWeight: FontWeight.w900, color: color)),
+        Text(
+          label,
+          style: TextStyle(
+            color: color.withOpacity(0.5),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        Text(
+          value,
+          style: GoogleFonts.outfit(fontWeight: FontWeight.w900, color: color),
+        ),
       ],
     );
   }

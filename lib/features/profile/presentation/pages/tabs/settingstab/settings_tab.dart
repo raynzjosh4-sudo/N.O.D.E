@@ -5,13 +5,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:node_app/core/theme/theme_provider.dart';
 
 import 'pages/node_manifesto_page.dart';
-import 'pages/profile_management_page.dart';
 import 'pages/theme_settings_page.dart';
+import 'pages/trading_terms_page.dart';
+import 'pages/legal_terms_page.dart';
 import 'package:node_app/core/utils/responsive_size.dart';
-import 'package:node_app/core/utils/seed_data_service.dart';
-import 'package:node_app/features/inventory/presentation/providers/inventory_notifier.dart';
 import 'package:node_app/features/showcase/presentation/services/node_toast_manager.dart';
 import 'package:node_app/features/showcase/presentation/widgets/node_toast.dart';
+
+import 'package:go_router/go_router.dart';
 
 class SettingsTab extends ConsumerWidget {
   SettingsTab({super.key});
@@ -21,10 +22,11 @@ class SettingsTab extends ConsumerWidget {
     final theme = Theme.of(context);
     final onSurface = theme.colorScheme.onSurface;
     final currentThemeMode = ref.watch(themeModeProvider);
-    
+
     // Formatting mode name for subtitle
-    final modeName = currentThemeMode == ThemeMode.system ? 'System' : 
-        (currentThemeMode == ThemeMode.light ? 'Light' : 'Dark');
+    final modeName = currentThemeMode == ThemeMode.system
+        ? 'System'
+        : (currentThemeMode == ThemeMode.light ? 'Light' : 'Dark');
 
     return ListView(
       padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 0),
@@ -81,15 +83,10 @@ class SettingsTab extends ConsumerWidget {
           context,
           'Profile Information',
           Icons.person_outline_rounded,
-          onTap: () => ProfileManagementPage.show(context),
+          onTap: () => context.push('/profile-management'),
         ),
-        _buildSettingTile(
-          context,
-          'Security & Password',
-          Icons.lock_outline_rounded,
-          onTap: () {},
-        ),
-        SizedBox(height: 16.h),
+
+        SizedBox(height: 7.h),
         _buildSectionHeader('Preferences'),
         _buildSettingTile(
           context,
@@ -98,60 +95,51 @@ class SettingsTab extends ConsumerWidget {
           onTap: () => ThemeSettingsPage.show(context),
           trailing: modeName,
         ),
-        _buildSettingTile(
-          context,
-          'Notifications',
-          Icons.notifications_none_rounded,
-          onTap: () {},
-        ),
-        _buildSettingTile(
-          context,
-          'Language',
-          Icons.language_rounded,
-          onTap: () {},
-          trailing: 'English',
-        ),
+
         SizedBox(height: 16.h),
         _buildSectionHeader('Support'),
         _buildSettingTile(
           context,
           'Help Center',
           Icons.help_outline_rounded,
-          onTap: () {},
+          onTap: () => NodeToastManager.show(
+            context,
+            title: 'Coming Soon',
+            message: 'Help Center is being prepared for the N.O.D.E live release.',
+          ),
         ),
         _buildSettingTile(
           context,
           'Terms of Service',
           Icons.description_outlined,
-          onTap: () {},
+          onTap: () => LegalTermsPage.show(
+            context,
+            termId: 'tos',
+            title: 'Terms of Service',
+          ),
         ),
+        _buildSettingTile(
+          context,
+          'Privacy Policy',
+          Icons.privacy_tip_outlined,
+          onTap: () => LegalTermsPage.show(
+            context,
+            termId: 'privacy',
+            title: 'Privacy Policy',
+          ),
+        ),
+
         _buildSettingTile(
           context,
           'Become a Supplier',
           Icons.storefront_outlined,
-          onTap: () {},
+          onTap: () => LegalTermsPage.show(
+            context,
+            termId: 'supplier',
+            title: 'Become a Supplier',
+          ),
         ),
         SizedBox(height: 16.h),
-        _buildSectionHeader('Developer'),
-        _buildSettingTile(
-          context,
-          'Populate Initial Data',
-          Icons.auto_awesome_rounded,
-          onTap: () async {
-            final db = ref.read(databaseProvider);
-            await SeedDataService.seedDatabase(db);
-            await ref.read(inventoryNotifierProvider.notifier).refresh();
-            if (context.mounted) {
-              NodeToastManager.show(
-                context,
-                title: 'Data Seeded',
-                message: 'Real sample records have been injected into your local registry.',
-                status: NodeToastStatus.success,
-              );
-            }
-          },
-        ),
-        SizedBox(height: 24.h),
       ],
     );
   }
@@ -183,30 +171,54 @@ class SettingsTab extends ConsumerWidget {
     final onSurface = theme.colorScheme.onSurface;
     final color = isDestructive ? theme.colorScheme.error : onSurface;
 
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 4.w),
-        child: Row(
-          children: [
-            Text(
-              title,
-              style: GoogleFonts.outfit(
-                fontSize: 15.sp,
-                fontWeight: FontWeight.w600,
-                color: color,
+    return Padding(
+      padding: EdgeInsets.only(bottom: 8.h),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12.r),
+        child: Container(
+          padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 12.w),
+          decoration: BoxDecoration(
+            color: isDestructive
+                ? theme.colorScheme.error.withOpacity(0.08)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(12.r),
+            border: isDestructive
+                ? Border.all(color: theme.colorScheme.error.withOpacity(0.15))
+                : null,
+          ),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                size: 20.w,
+                color: color.withOpacity(isDestructive ? 1.0 : 0.7),
               ),
-            ),
-            Spacer(),
-            if (trailing != null)
+              SizedBox(width: 12.w),
               Text(
-                trailing,
+                title,
                 style: GoogleFonts.outfit(
-                  fontSize: 14.sp,
-                  color: onSurface.withOpacity(0.5),
+                  fontSize: 15.sp,
+                  fontWeight: isDestructive ? FontWeight.w700 : FontWeight.w600,
+                  color: color,
                 ),
               ),
-          ],
+              Spacer(),
+              if (trailing != null)
+                Text(
+                  trailing,
+                  style: GoogleFonts.outfit(
+                    fontSize: 14.sp,
+                    color: onSurface.withOpacity(0.5),
+                  ),
+                ),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 16.w,
+                color: color.withAlpha(80),
+              ),
+            ],
+          ),
         ),
       ),
     );

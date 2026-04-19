@@ -1,5 +1,6 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:node_app/features/home/domain/entities/supplier.dart';
+import 'package:node_app/features/home/domain/entities/promo_campaign.dart';
 import '../../../../core/error/failure.dart';
 import 'package:node_app/features/inventory/domain/entities/product.dart';
 
@@ -16,4 +17,6 @@ abstract class HomeRepository {
     required int pageSize,
     String? category,
   });
+
+  Future<Either<Failure, List<PromoCampaign>>> getPromotions();
 }

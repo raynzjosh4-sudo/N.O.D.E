@@ -2,6 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:node_app/core/utils/responsive_size.dart';
+import 'package:node_app/features/profile/presentation/pages/tabs/settingstab/pages/legal_terms_page.dart';
+import 'package:flutter/gestures.dart';
+import 'package:node_app/core/error/failure.dart';
+import 'package:node_app/features/showcase/presentation/services/node_toast_manager.dart';
+import 'package:node_app/features/showcase/presentation/widgets/node_toast.dart';
+import 'package:node_app/features/auth/google/service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthPromptSheet extends StatelessWidget {
   AuthPromptSheet({super.key});
@@ -58,9 +65,61 @@ class AuthPromptSheet extends StatelessWidget {
             width: double.infinity,
             height: 44.h,
             child: OutlinedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                context.go('/home'); // Simulate successful login
+              onPressed: () async {
+                try {
+                  debugPrint('👉 [UI] Continue with Google button tapped!');
+                  
+                  // Show loading feedback
+                  if (context.mounted) {
+                    NodeToastManager.show(
+                      context,
+                      title: 'Authenticating',
+                      message: 'Connecting to Google Secure Login...',
+                      status: NodeToastStatus.info,
+                    );
+                  }
+
+                  final authService = AuthService();
+                  final response = await authService.signInWithGoogle();
+                  
+                  if (response != null && response.user != null) {
+                    debugPrint('👉 [UI] Authentication complete. Checking business profile...');
+                    
+                    // Check if they have a business profile already
+                    final existingBusiness = await Supabase.instance.client
+                        .from('business_table')
+                        .select()
+                        .eq('user_id', response.user!.id)
+                        .maybeSingle();
+
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                      
+                      NodeToastManager.show(
+                        context,
+                        title: 'Success',
+                        message: 'Welcome back to N.O.D.E.',
+                        status: NodeToastStatus.success,
+                      );
+
+                      context.go('/home');
+                    }
+                  } else {
+                    debugPrint('⚠️ [UI] Authentication returned null (cancelled).');
+                    // No toast needed for cancellation by default, but let's clear any loading info
+                  }
+                } catch (error) {
+                  debugPrint('❌ [UI] Button Error: $error');
+                  if (context.mounted) {
+                    final failure = Failure.fromException(error);
+                    NodeToastManager.show(
+                      context,
+                      title: 'Login Failed',
+                      message: failure.toFriendlyMessage(),
+                      status: NodeToastStatus.error,
+                    );
+                  }
+                }
               },
               style: OutlinedButton.styleFrom(
                 side: BorderSide(
@@ -94,30 +153,46 @@ class AuthPromptSheet extends StatelessWidget {
           SizedBox(height: 12.h),
 
           // 📜 CLICKABLE TERMS
-          GestureDetector(
-            onTap: () {
-              // Handle terms click
-            },
-            child: Text.rich(
-              TextSpan(
-                text: 'By continuing you agree to Node\'s ',
-                children: [
-                  TextSpan(
-                    text: 'Terms and Conditions',
-                    style: TextStyle(
-                      color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.w700,
-                      decoration: TextDecoration.underline,
-                    ),
-                  ),
-                ],
-              ),
-              textAlign: TextAlign.center,
+          Text.rich(
+            TextSpan(
+              text: 'By continuing you agree to Node\'s ',
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 10.sp,
                 color: theme.colorScheme.onSurface.withOpacity(0.4),
               ),
+              children: [
+                TextSpan(
+                  text: 'Terms of Service',
+                  style: TextStyle(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w700,
+                    decoration: TextDecoration.underline,
+                  ),
+                  recognizer: TapGestureRecognizer()
+                    ..onTap = () => LegalTermsPage.show(
+                          context,
+                          termId: 'tos',
+                          title: 'Terms of Service',
+                        ),
+                ),
+                const TextSpan(text: ' & '),
+                TextSpan(
+                  text: 'Privacy Policy',
+                  style: TextStyle(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w700,
+                    decoration: TextDecoration.underline,
+                  ),
+                  recognizer: TapGestureRecognizer()
+                    ..onTap = () => LegalTermsPage.show(
+                          context,
+                          termId: 'privacy',
+                          title: 'Privacy Policy',
+                        ),
+                ),
+              ],
             ),
+            textAlign: TextAlign.center,
           ),
           SizedBox(height: 20.h),
 

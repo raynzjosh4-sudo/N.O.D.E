@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:node_app/core/utils/responsive_size.dart';
 import 'package:node_app/features/home/data/repositories/search_history_repository.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SearchHistoryView extends ConsumerWidget {
   final VoidCallback onCancel;
@@ -36,7 +37,12 @@ class SearchHistoryView extends ConsumerWidget {
                   ),
                 ),
                 TextButton(
-                  onPressed: () => repository.clearAll(),
+                  onPressed: () {
+                    final userId =
+                        Supabase.instance.client.auth.currentSession?.user.id ??
+                        'guest';
+                    repository.clearAll(userId);
+                  },
                   child: Text(
                     'Clear all',
                     style: GoogleFonts.outfit(

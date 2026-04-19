@@ -35,6 +35,7 @@ class ProductsTable extends Table {
   TextColumn get slug => text()();
   TextColumn get imageUrl => text()();
   TextColumn get mediaUrls => text().nullable()();
+  RealColumn get aspectRatio => real().withDefault(const Constant(1.0))();
   
   // --- Rich Attributes (JSON) ---
   TextColumn get availableColors => text().nullable()();

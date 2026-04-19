@@ -4,9 +4,9 @@ import 'package:drift/drift.dart';
 class UsersTable extends Table {
   TextColumn get id => text()();
   TextColumn get fullName => text()();
-  TextColumn get phoneNumber => text()();
-  TextColumn get address => text()();
-  TextColumn get city => text()();
+  TextColumn get email => text().nullable()();
+  TextColumn get role => text().withDefault(const Constant('customer'))();
+  TextColumn get profilePicUrl => text().nullable()();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 
   @override

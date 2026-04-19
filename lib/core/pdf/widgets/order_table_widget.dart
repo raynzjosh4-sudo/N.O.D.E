@@ -115,14 +115,14 @@ pw.Widget _buildHeaderCell(
   bool isLast = false,
 }) {
   return pw.Padding(
-    padding: const pw.EdgeInsets.all(10),
+    padding: const pw.EdgeInsets.all(12),
     child: pw.Text(
       text,
       style: pw.TextStyle(
-        fontSize: 8,
+        fontSize: 10.5,
         fontWeight: pw.FontWeight.bold,
         color: PdfColors.white,
-        letterSpacing: 1,
+        letterSpacing: 1.2,
       ),
       textAlign: isFirst ? pw.TextAlign.left : pw.TextAlign.center,
     ),
@@ -136,11 +136,11 @@ pw.Widget _buildTableCell(
   bool isFirst = false,
 }) {
   return pw.Padding(
-    padding: const pw.EdgeInsets.all(10),
+    padding: const pw.EdgeInsets.all(12),
     child: pw.Text(
       text,
       style: pw.TextStyle(
-        fontSize: 9,
+        fontSize: 11.5,
         fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
         color: color,
       ),
@@ -155,14 +155,14 @@ pw.Widget _buildColorCell(
   PdfColor textColor,
 ) {
   return pw.Padding(
-    padding: const pw.EdgeInsets.all(10),
+    padding: const pw.EdgeInsets.all(12),
     child: pw.Row(
       mainAxisSize: pw.MainAxisSize.min,
       crossAxisAlignment: pw.CrossAxisAlignment.center,
       children: [
         pw.Container(
-          width: 8,
-          height: 8,
+          width: 9,
+          height: 9,
           decoration: pw.BoxDecoration(
             color: swatchColor,
             shape: pw.BoxShape.circle,
@@ -173,7 +173,7 @@ pw.Widget _buildColorCell(
         pw.Text(
           label,
           style: pw.TextStyle(
-            fontSize: 9,
+            fontSize: 11.5,
             fontWeight: pw.FontWeight.bold,
             color: textColor,
           ),
@@ -196,7 +196,7 @@ pw.Widget _buildSummaryLine(
       pw.Text(
         label,
         style: pw.TextStyle(
-          fontSize: 7,
+          fontSize: 9.5,
           fontWeight: pw.FontWeight.bold,
           color: labelColor,
           letterSpacing: 1.5,
@@ -206,7 +206,7 @@ pw.Widget _buildSummaryLine(
       pw.Text(
         value,
         style: pw.TextStyle(
-          fontSize: isLarge ? 14 : 10,
+          fontSize: isLarge ? 18 : 13,
           fontWeight: pw.FontWeight.bold,
           color: valueColor,
         ),

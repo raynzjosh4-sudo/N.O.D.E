@@ -1,23 +1,31 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:node_app/core/database/app_database.dart';
 import 'package:node_app/core/domain/entities/location.dart';
+import 'package:node_app/features/profile/presentation/providers/profile_providers.dart';
 import 'package:node_app/features/home/domain/entities/supplier.dart';
 import 'package:node_app/features/inventory/domain/entities/price_tier.dart';
 import 'package:node_app/features/inventory/domain/entities/product.dart';
 import 'package:node_app/features/inventory/domain/entities/product_attributes.dart';
 import 'package:node_app/features/inventory/domain/entities/trading_terms.dart';
 import 'package:node_app/features/orders/presentation/providers/bulk_order_providers.dart';
-import 'package:node_app/features/home/data/product_dummy_data.dart';
+import 'package:node_app/features/orders/presentation/providers/wholesale_order_providers.dart';
 import 'package:node_app/features/profile/domain/entities/saved_product.dart';
 import 'package:node_app/features/profile/domain/entities/wholesale_order.dart';
 import 'package:node_app/features/profile/presentation/providers/pdf_providers.dart';
+import 'package:node_app/features/saved_items/domain/entities/saved_item.dart';
+import 'package:node_app/features/saved_items/presentation/providers/saved_items_provider.dart';
 import 'package:node_app/core/utils/responsive_size.dart';
+import 'package:node_app/features/inventory/data/models/product_model.dart';
+import 'package:node_app/features/profile/presentation/providers/profile_providers.dart'
+    hide userProfileProvider;
 import '../tabs/savedtab/saved_tab.dart';
 import '../tabs/drafttab/drafts_tab.dart';
-import '../tabs/ordertab/orders_tab.dart';
+import '../tabs/ordertab/pending_orders_tab.dart';
+import '../tabs/ordertab/sent_orders_tab.dart';
 import '../tabs/ordertab/widgets/delete_confirmation_sheet.dart';
 import '../tabs/pdftab/pdf_tab.dart';
 import '../../../../showcase/presentation/services/node_toast_manager.dart';
@@ -25,6 +33,7 @@ import '../../../../showcase/presentation/widgets/node_toast.dart';
 import '../tabs/settingstab/settings_tab.dart';
 import '../../../../home/presentation/pages/specificationorderpage/widgets/multiorderpage/multi_product_order_page.dart';
 import 'package:node_app/features/inventory/presentation/providers/inventory_notifier.dart';
+import 'package:node_app/core/error/failure.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Converts a persisted BulkOrderEntry (from Drift DB) into a SavedProduct
@@ -218,16 +227,24 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     super.dispose();
   }
 
-  /// Maps selected DB entry IDs → SavedProduct list for MultiProductOrderPage.
-  void _startOrderFromSaved(List<BulkOrderEntry> allSavedEntries) {
+  /// Maps selected SavedItem IDs → SavedProduct list for MultiProductOrderPage.
+  void _startOrderFromSaved(List<SavedItem> allSavedItems) {
     final selected = _selectedSavedIds.value;
-    final selectedEntries = allSavedEntries
-        .where((e) => selected.contains(e.id))
+    final selectedItems = allSavedItems
+        .where((e) => selected.contains(e.productId))
         .toList();
 
-    if (selectedEntries.isEmpty) return;
+    if (selectedItems.isEmpty) return;
 
-    final products = selectedEntries.map(_bulkEntryToSavedProduct).toList();
+    final products = selectedItems.map((item) {
+      final product = ProductModel.fromJson(item.productSnapshot);
+      return SavedProduct(
+        product: product,
+        quantity: item.quantity,
+        selectedColor: item.selectedColor,
+        selectedSize: item.selectedSize,
+      );
+    }).toList();
 
     MultiProductOrderPage.show(context, products);
   }
@@ -236,11 +253,23 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final selectedIds = _selectedOrderIds.value;
     if (selectedIds.isEmpty) return;
 
-    final ordersAsync = ref.read(userOrdersProvider);
-    final orders = ordersAsync.maybeWhen(
-      data: (o) => o.where((order) => selectedIds.contains(order.id)).toList(),
-      orElse: () => <WholesaleOrder>[],
-    );
+    final pendingOrdersAsync = ref.read(wholesaleOrdersProvider);
+    final sentOrdersAsync = ref.read(sentOrdersProvider);
+
+    final allOrders = [
+      ...pendingOrdersAsync.maybeWhen(
+        data: (o) => o,
+        orElse: () => <WholesaleOrder>[],
+      ),
+      ...sentOrdersAsync.maybeWhen(
+        data: (o) => o,
+        orElse: () => <WholesaleOrder>[],
+      ),
+    ];
+
+    final orders = allOrders
+        .where((order) => selectedIds.contains(order.id))
+        .toList();
 
     if (orders.isEmpty) return;
 
@@ -250,11 +279,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       context,
       orderCount: orders.length,
       hasPdfs: hasPdfs,
+      itemCount: int.fromEnvironment(AutofillHints.birthdayYear),
     );
 
     if (result == null || !result.confirmDelete) return;
 
-    final orderRepo = ref.read(orderRepositoryProvider);
+    final orderRepo = ref.read(wholesaleOrderRepositoryProvider);
     final pdfRepo = ref.read(pdfRepositoryProvider);
 
     int deletedOrders = 0;
@@ -274,7 +304,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           NodeToastManager.show(
             context,
             title: 'Registry Error',
-            message: failure.message,
+            message: failure.toFriendlyMessage(),
             status: NodeToastStatus.error,
           );
         }
@@ -283,7 +313,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
     if (mounted) {
       _selectedOrderIds.value = {};
-      ref.invalidate(userOrdersProvider);
+      ref.invalidate(wholesaleOrdersProvider);
+      ref.invalidate(sentOrdersProvider);
       ref.invalidate(userPdfsProvider);
 
       NodeToastManager.show(
@@ -309,15 +340,22 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       orElse: () => <Product>[],
     );
 
-    // Watch saved bulk orders so we can convert them on checkout
-    final savedOrdersAsync = ref.watch(savedBulkOrdersProvider);
-    final allSavedEntries = savedOrdersAsync.maybeWhen(
-      data: (entries) => entries,
-      orElse: () => <BulkOrderEntry>[],
+    // Watch saved items from the persistent cloud bag
+    final savedItemsAsync = ref.watch(savedItemsProvider);
+    final allSavedEntries = savedItemsAsync.maybeWhen(
+      data: (items) => items,
+      orElse: () => <SavedItem>[],
     );
 
+    // 👤 Profile & Business Data from Drift
+    final userProfileAsync = ref.watch(userProfileProvider);
+    final userBusinessAsync = ref.watch(userBusinessProvider);
+
+    final userProfile = userProfileAsync.value;
+    final userBusiness = userBusinessAsync.value;
+
     return DefaultTabController(
-      length: 5,
+      length: 6,
       child: Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
         body: SafeArea(
@@ -340,14 +378,22 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           color: theme.primaryColor,
                           width: 1.5.w,
                         ),
-                        image: DecorationImage(
-                          image: NetworkImage(
-                            merchantUserProfile.profilePicUrl ??
-                                'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200',
-                          ),
-                          fit: BoxFit.cover,
-                        ),
+                        image: userProfile?.profilePicUrl != null
+                            ? DecorationImage(
+                                image: NetworkImage(
+                                  userProfile!.profilePicUrl!,
+                                ),
+                                fit: BoxFit.cover,
+                              )
+                            : null,
                       ),
+                      child: userProfile?.profilePicUrl == null
+                          ? Icon(
+                              Icons.person_rounded,
+                              size: 20.w,
+                              color: onSurface.withOpacity(0.3),
+                            )
+                          : null,
                     ),
 
                     // Name (Top Center)
@@ -355,14 +401,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          merchantUserProfile.fullName,
+                          userProfile?.fullName ?? 'Anonymous User',
                           style: TextStyle(
                             fontSize: 18.sp,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
                         Text(
-                          'Verified Wholesale Merchant',
+                          userBusiness?.legalName ?? 'Standard Account',
                           style: TextStyle(
                             fontSize: 11.sp,
                             fontWeight: FontWeight.w600,
@@ -399,7 +445,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                                     ),
                                     child: Icon(
                                       Icons.delete_outline_rounded,
-                                      size: 20.w,
+                                      size: 21.w,
                                       color: Colors.red,
                                     ),
                                   ),
@@ -417,14 +463,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                                     ),
                                     child: Icon(
                                       Icons.shopping_cart_checkout_rounded,
-                                      size: 20.w,
+                                      size: 24.w,
                                       color: Colors.white,
                                     ),
                                   ),
                                 )
                               : GestureDetector(
                                   key: const ValueKey('close_page'),
-                                  onTap: () => Navigator.pop(context),
+                                  onTap: () => context.pop(),
                                   child: Container(
                                     padding: EdgeInsets.all(8.w),
                                     decoration: BoxDecoration(
@@ -433,7 +479,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                                     ),
                                     child: Icon(
                                       Icons.close_rounded,
-                                      size: 20.w,
+                                      size: 24.w,
                                       color: onSurface,
                                     ),
                                   ),
@@ -475,7 +521,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     tabs: const [
                       Tab(text: 'Saved'),
                       Tab(text: 'Drafts'),
-                      Tab(text: 'Orders'),
+                      Tab(text: 'Pending'),
+                      Tab(text: 'Sent'),
                       Tab(text: 'PDF'),
                       Tab(text: 'Settings'),
                     ],
@@ -490,7 +537,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   children: [
                     SavedTab(selectedIdsNotifier: _selectedSavedIds),
                     DraftsTab(),
-                    OrdersTab(selectedIdsNotifier: _selectedOrderIds),
+                    PendingOrdersTab(selectedIdsNotifier: _selectedOrderIds),
+                    SentOrdersTab(selectedIdsNotifier: _selectedOrderIds),
                     PdfTab(),
                     SettingsTab(),
                   ],

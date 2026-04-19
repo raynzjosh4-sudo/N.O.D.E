@@ -12,7 +12,6 @@ import '../providers/home_providers.dart';
 
 import '../widgets/product_media_section.dart';
 import 'productspecificationpage/product_specs_screen.dart';
-import 'package:node_app/features/home/data/category_dummy_data.dart';
 import 'package:node_app/features/home/presentation/pages/categories/categories_page.dart';
 import 'package:node_app/core/utils/responsive_size.dart';
 
@@ -36,17 +35,14 @@ class ProductDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
-  late String _selectedCategoryId;
+  String? _selectedCategoryId;
   Product? _heroProduct;
   bool _isLoadingHero = false;
 
   @override
   void initState() {
     super.initState();
-    _selectedCategoryId =
-        widget.category ??
-        widget.product?.categoryId ??
-        CategoryDummyData.topSearchedCategories.first.id;
+    _selectedCategoryId = widget.category ?? widget.product?.categoryId;
     _heroProduct = widget.product;
 
     if (_heroProduct == null) {
@@ -61,6 +57,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
       page: 0,
       pageSize: 1,
       category: _selectedCategoryId,
+      supplierId: widget.supplierId,
     );
 
     result.fold((failure) => debugPrint('Hero fetch error: $failure'), (items) {
@@ -443,7 +440,7 @@ class HeroHeaderDelegate extends SliverPersistentHeaderDelegate {
             right: 0,
             child: Center(
               child: Text(
-                'Explore', // Default title
+                product?.supplier.name ?? 'Explore',
                 style: GoogleFonts.outfit(
                   fontSize: 18.sp,
                   fontWeight: FontWeight.bold,

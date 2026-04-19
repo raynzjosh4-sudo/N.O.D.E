@@ -1,53 +1,64 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:node_app/features/home/data/product_dummy_data.dart';
+import 'package:node_app/features/home/presentation/providers/home_providers.dart';
 import 'package:node_app/core/utils/responsive_size.dart';
 import 'widgets/popular_card.dart';
+import 'package:node_app/core/widgets/node_shimmer.dart';
+import 'package:node_app/core/widgets/node_error_state.dart';
 
-class PopularSection extends StatelessWidget {
+class PopularSection extends ConsumerWidget {
   final String? categoryId;
   PopularSection({super.key, this.categoryId});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final productsAsync = ref.watch(popularProductsProvider(categoryId));
 
-    // 🔍 Filter products by category if provided
-    final products = categoryId == null
-        ? ProductDummyData.products
-        : ProductDummyData.products
-              .where((p) => p.categoryId == categoryId)
-              .toList();
+    return productsAsync.when(
+      data: (products) {
+        if (products.isEmpty) {
+          return const SizedBox.shrink();
+        }
 
-    if (products.isEmpty) {
-      return const SizedBox.shrink(); // Hide section if no popular products in this category
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Popular',
-          style: GoogleFonts.outfit(
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w800,
-            color: theme.colorScheme.onSurface,
-          ),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Popular',
+              style: GoogleFonts.outfit(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.w800,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            SizedBox(height: 6.h),
+            SizedBox(
+              height: 100.h,
+              child: ListView.separated(
+                clipBehavior: Clip.none,
+                scrollDirection: Axis.horizontal,
+                itemCount: products.length,
+                separatorBuilder: (context, index) => SizedBox(width: 12.w),
+                itemBuilder: (context, index) {
+                  return PopularCard(product: products[index]);
+                },
+              ),
+            ),
+          ],
+        );
+      },
+      loading: () => SizedBox(
+        height: 100.h,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: 3,
+          separatorBuilder: (context, index) => SizedBox(width: 12.w),
+          itemBuilder: (context, index) => const PopularItemSkeleton(),
         ),
-        SizedBox(height: 6.h),
-        SizedBox(
-          height: 100.h,
-          child: ListView.separated(
-            clipBehavior: Clip.none,
-            scrollDirection: Axis.horizontal,
-            itemCount: products.length,
-            separatorBuilder: (context, index) => SizedBox(width: 12.w),
-            itemBuilder: (context, index) {
-              return PopularCard(product: products[index]);
-            },
-          ),
-        ),
-      ],
+      ),
+      error: (err, stack) => const SizedBox.shrink(),
     );
   }
 }

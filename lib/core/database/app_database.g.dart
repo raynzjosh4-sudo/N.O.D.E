@@ -272,6 +272,18 @@ class $ProductsTableTable extends ProductsTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _aspectRatioMeta = const VerificationMeta(
+    'aspectRatio',
+  );
+  @override
+  late final GeneratedColumn<double> aspectRatio = GeneratedColumn<double>(
+    'aspect_ratio',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1.0),
+  );
   static const VerificationMeta _availableColorsMeta = const VerificationMeta(
     'availableColors',
   );
@@ -380,6 +392,7 @@ class $ProductsTableTable extends ProductsTable
     slug,
     imageUrl,
     mediaUrls,
+    aspectRatio,
     availableColors,
     availableSizes,
     availableMaterials,
@@ -616,6 +629,15 @@ class $ProductsTableTable extends ProductsTable
         mediaUrls.isAcceptableOrUnknown(data['media_urls']!, _mediaUrlsMeta),
       );
     }
+    if (data.containsKey('aspect_ratio')) {
+      context.handle(
+        _aspectRatioMeta,
+        aspectRatio.isAcceptableOrUnknown(
+          data['aspect_ratio']!,
+          _aspectRatioMeta,
+        ),
+      );
+    }
     if (data.containsKey('available_colors')) {
       context.handle(
         _availableColorsMeta,
@@ -785,6 +807,10 @@ class $ProductsTableTable extends ProductsTable
         DriftSqlType.string,
         data['${effectivePrefix}media_urls'],
       ),
+      aspectRatio: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}aspect_ratio'],
+      )!,
       availableColors: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}available_colors'],
@@ -848,6 +874,7 @@ class ProductEntry extends DataClass implements Insertable<ProductEntry> {
   final String slug;
   final String imageUrl;
   final String? mediaUrls;
+  final double aspectRatio;
   final String? availableColors;
   final String? availableSizes;
   final String? availableMaterials;
@@ -881,6 +908,7 @@ class ProductEntry extends DataClass implements Insertable<ProductEntry> {
     required this.slug,
     required this.imageUrl,
     this.mediaUrls,
+    required this.aspectRatio,
     this.availableColors,
     this.availableSizes,
     this.availableMaterials,
@@ -919,6 +947,7 @@ class ProductEntry extends DataClass implements Insertable<ProductEntry> {
     if (!nullToAbsent || mediaUrls != null) {
       map['media_urls'] = Variable<String>(mediaUrls);
     }
+    map['aspect_ratio'] = Variable<double>(aspectRatio);
     if (!nullToAbsent || availableColors != null) {
       map['available_colors'] = Variable<String>(availableColors);
     }
@@ -970,6 +999,7 @@ class ProductEntry extends DataClass implements Insertable<ProductEntry> {
       mediaUrls: mediaUrls == null && nullToAbsent
           ? const Value.absent()
           : Value(mediaUrls),
+      aspectRatio: Value(aspectRatio),
       availableColors: availableColors == null && nullToAbsent
           ? const Value.absent()
           : Value(availableColors),
@@ -1023,6 +1053,7 @@ class ProductEntry extends DataClass implements Insertable<ProductEntry> {
       slug: serializer.fromJson<String>(json['slug']),
       imageUrl: serializer.fromJson<String>(json['imageUrl']),
       mediaUrls: serializer.fromJson<String?>(json['mediaUrls']),
+      aspectRatio: serializer.fromJson<double>(json['aspectRatio']),
       availableColors: serializer.fromJson<String?>(json['availableColors']),
       availableSizes: serializer.fromJson<String?>(json['availableSizes']),
       availableMaterials: serializer.fromJson<String?>(
@@ -1063,6 +1094,7 @@ class ProductEntry extends DataClass implements Insertable<ProductEntry> {
       'slug': serializer.toJson<String>(slug),
       'imageUrl': serializer.toJson<String>(imageUrl),
       'mediaUrls': serializer.toJson<String?>(mediaUrls),
+      'aspectRatio': serializer.toJson<double>(aspectRatio),
       'availableColors': serializer.toJson<String?>(availableColors),
       'availableSizes': serializer.toJson<String?>(availableSizes),
       'availableMaterials': serializer.toJson<String?>(availableMaterials),
@@ -1099,6 +1131,7 @@ class ProductEntry extends DataClass implements Insertable<ProductEntry> {
     String? slug,
     String? imageUrl,
     Value<String?> mediaUrls = const Value.absent(),
+    double? aspectRatio,
     Value<String?> availableColors = const Value.absent(),
     Value<String?> availableSizes = const Value.absent(),
     Value<String?> availableMaterials = const Value.absent(),
@@ -1132,6 +1165,7 @@ class ProductEntry extends DataClass implements Insertable<ProductEntry> {
     slug: slug ?? this.slug,
     imageUrl: imageUrl ?? this.imageUrl,
     mediaUrls: mediaUrls.present ? mediaUrls.value : this.mediaUrls,
+    aspectRatio: aspectRatio ?? this.aspectRatio,
     availableColors: availableColors.present
         ? availableColors.value
         : this.availableColors,
@@ -1197,6 +1231,9 @@ class ProductEntry extends DataClass implements Insertable<ProductEntry> {
       slug: data.slug.present ? data.slug.value : this.slug,
       imageUrl: data.imageUrl.present ? data.imageUrl.value : this.imageUrl,
       mediaUrls: data.mediaUrls.present ? data.mediaUrls.value : this.mediaUrls,
+      aspectRatio: data.aspectRatio.present
+          ? data.aspectRatio.value
+          : this.aspectRatio,
       availableColors: data.availableColors.present
           ? data.availableColors.value
           : this.availableColors,
@@ -1247,6 +1284,7 @@ class ProductEntry extends DataClass implements Insertable<ProductEntry> {
           ..write('slug: $slug, ')
           ..write('imageUrl: $imageUrl, ')
           ..write('mediaUrls: $mediaUrls, ')
+          ..write('aspectRatio: $aspectRatio, ')
           ..write('availableColors: $availableColors, ')
           ..write('availableSizes: $availableSizes, ')
           ..write('availableMaterials: $availableMaterials, ')
@@ -1285,6 +1323,7 @@ class ProductEntry extends DataClass implements Insertable<ProductEntry> {
     slug,
     imageUrl,
     mediaUrls,
+    aspectRatio,
     availableColors,
     availableSizes,
     availableMaterials,
@@ -1322,6 +1361,7 @@ class ProductEntry extends DataClass implements Insertable<ProductEntry> {
           other.slug == this.slug &&
           other.imageUrl == this.imageUrl &&
           other.mediaUrls == this.mediaUrls &&
+          other.aspectRatio == this.aspectRatio &&
           other.availableColors == this.availableColors &&
           other.availableSizes == this.availableSizes &&
           other.availableMaterials == this.availableMaterials &&
@@ -1357,6 +1397,7 @@ class ProductsTableCompanion extends UpdateCompanion<ProductEntry> {
   final Value<String> slug;
   final Value<String> imageUrl;
   final Value<String?> mediaUrls;
+  final Value<double> aspectRatio;
   final Value<String?> availableColors;
   final Value<String?> availableSizes;
   final Value<String?> availableMaterials;
@@ -1391,6 +1432,7 @@ class ProductsTableCompanion extends UpdateCompanion<ProductEntry> {
     this.slug = const Value.absent(),
     this.imageUrl = const Value.absent(),
     this.mediaUrls = const Value.absent(),
+    this.aspectRatio = const Value.absent(),
     this.availableColors = const Value.absent(),
     this.availableSizes = const Value.absent(),
     this.availableMaterials = const Value.absent(),
@@ -1426,6 +1468,7 @@ class ProductsTableCompanion extends UpdateCompanion<ProductEntry> {
     required String slug,
     required String imageUrl,
     this.mediaUrls = const Value.absent(),
+    this.aspectRatio = const Value.absent(),
     this.availableColors = const Value.absent(),
     this.availableSizes = const Value.absent(),
     this.availableMaterials = const Value.absent(),
@@ -1484,6 +1527,7 @@ class ProductsTableCompanion extends UpdateCompanion<ProductEntry> {
     Expression<String>? slug,
     Expression<String>? imageUrl,
     Expression<String>? mediaUrls,
+    Expression<double>? aspectRatio,
     Expression<String>? availableColors,
     Expression<String>? availableSizes,
     Expression<String>? availableMaterials,
@@ -1519,6 +1563,7 @@ class ProductsTableCompanion extends UpdateCompanion<ProductEntry> {
       if (slug != null) 'slug': slug,
       if (imageUrl != null) 'image_url': imageUrl,
       if (mediaUrls != null) 'media_urls': mediaUrls,
+      if (aspectRatio != null) 'aspect_ratio': aspectRatio,
       if (availableColors != null) 'available_colors': availableColors,
       if (availableSizes != null) 'available_sizes': availableSizes,
       if (availableMaterials != null) 'available_materials': availableMaterials,
@@ -1556,6 +1601,7 @@ class ProductsTableCompanion extends UpdateCompanion<ProductEntry> {
     Value<String>? slug,
     Value<String>? imageUrl,
     Value<String?>? mediaUrls,
+    Value<double>? aspectRatio,
     Value<String?>? availableColors,
     Value<String?>? availableSizes,
     Value<String?>? availableMaterials,
@@ -1591,6 +1637,7 @@ class ProductsTableCompanion extends UpdateCompanion<ProductEntry> {
       slug: slug ?? this.slug,
       imageUrl: imageUrl ?? this.imageUrl,
       mediaUrls: mediaUrls ?? this.mediaUrls,
+      aspectRatio: aspectRatio ?? this.aspectRatio,
       availableColors: availableColors ?? this.availableColors,
       availableSizes: availableSizes ?? this.availableSizes,
       availableMaterials: availableMaterials ?? this.availableMaterials,
@@ -1680,6 +1727,9 @@ class ProductsTableCompanion extends UpdateCompanion<ProductEntry> {
     if (mediaUrls.present) {
       map['media_urls'] = Variable<String>(mediaUrls.value);
     }
+    if (aspectRatio.present) {
+      map['aspect_ratio'] = Variable<double>(aspectRatio.value);
+    }
     if (availableColors.present) {
       map['available_colors'] = Variable<String>(availableColors.value);
     }
@@ -1735,6 +1785,7 @@ class ProductsTableCompanion extends UpdateCompanion<ProductEntry> {
           ..write('slug: $slug, ')
           ..write('imageUrl: $imageUrl, ')
           ..write('mediaUrls: $mediaUrls, ')
+          ..write('aspectRatio: $aspectRatio, ')
           ..write('availableColors: $availableColors, ')
           ..write('availableSizes: $availableSizes, ')
           ..write('availableMaterials: $availableMaterials, ')
@@ -1797,6 +1848,53 @@ class $CategoriesTableTable extends CategoriesTable
     requiredDuringInsert: false,
     defaultValue: Constant(0),
   );
+  static const VerificationMeta _imageUrlMeta = const VerificationMeta(
+    'imageUrl',
+  );
+  @override
+  late final GeneratedColumn<String> imageUrl = GeneratedColumn<String>(
+    'image_url',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _itemCountMeta = const VerificationMeta(
+    'itemCount',
+  );
+  @override
+  late final GeneratedColumn<int> itemCount = GeneratedColumn<int>(
+    'item_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: Constant(0),
+  );
+  static const VerificationMeta _priorityMeta = const VerificationMeta(
+    'priority',
+  );
+  @override
+  late final GeneratedColumn<int> priority = GeneratedColumn<int>(
+    'priority',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: Constant(0),
+  );
+  static const VerificationMeta _usageCountMeta = const VerificationMeta(
+    'usageCount',
+  );
+  @override
+  late final GeneratedColumn<int> usageCount = GeneratedColumn<int>(
+    'usage_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: Constant(0),
+  );
   static const VerificationMeta _isDirtyMeta = const VerificationMeta(
     'isDirty',
   );
@@ -1829,6 +1927,10 @@ class $CategoriesTableTable extends CategoriesTable
     name,
     parentId,
     level,
+    imageUrl,
+    itemCount,
+    priority,
+    usageCount,
     isDirty,
     lastSyncedAt,
   ];
@@ -1867,6 +1969,30 @@ class $CategoriesTableTable extends CategoriesTable
       context.handle(
         _levelMeta,
         level.isAcceptableOrUnknown(data['level']!, _levelMeta),
+      );
+    }
+    if (data.containsKey('image_url')) {
+      context.handle(
+        _imageUrlMeta,
+        imageUrl.isAcceptableOrUnknown(data['image_url']!, _imageUrlMeta),
+      );
+    }
+    if (data.containsKey('item_count')) {
+      context.handle(
+        _itemCountMeta,
+        itemCount.isAcceptableOrUnknown(data['item_count']!, _itemCountMeta),
+      );
+    }
+    if (data.containsKey('priority')) {
+      context.handle(
+        _priorityMeta,
+        priority.isAcceptableOrUnknown(data['priority']!, _priorityMeta),
+      );
+    }
+    if (data.containsKey('usage_count')) {
+      context.handle(
+        _usageCountMeta,
+        usageCount.isAcceptableOrUnknown(data['usage_count']!, _usageCountMeta),
       );
     }
     if (data.containsKey('is_dirty')) {
@@ -1909,6 +2035,22 @@ class $CategoriesTableTable extends CategoriesTable
         DriftSqlType.int,
         data['${effectivePrefix}level'],
       )!,
+      imageUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}image_url'],
+      ),
+      itemCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}item_count'],
+      )!,
+      priority: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}priority'],
+      )!,
+      usageCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}usage_count'],
+      )!,
       isDirty: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_dirty'],
@@ -1931,6 +2073,10 @@ class CategoryEntry extends DataClass implements Insertable<CategoryEntry> {
   final String name;
   final String? parentId;
   final int level;
+  final String? imageUrl;
+  final int itemCount;
+  final int priority;
+  final int usageCount;
   final bool isDirty;
   final DateTime? lastSyncedAt;
   const CategoryEntry({
@@ -1938,6 +2084,10 @@ class CategoryEntry extends DataClass implements Insertable<CategoryEntry> {
     required this.name,
     this.parentId,
     required this.level,
+    this.imageUrl,
+    required this.itemCount,
+    required this.priority,
+    required this.usageCount,
     required this.isDirty,
     this.lastSyncedAt,
   });
@@ -1950,6 +2100,12 @@ class CategoryEntry extends DataClass implements Insertable<CategoryEntry> {
       map['parent_id'] = Variable<String>(parentId);
     }
     map['level'] = Variable<int>(level);
+    if (!nullToAbsent || imageUrl != null) {
+      map['image_url'] = Variable<String>(imageUrl);
+    }
+    map['item_count'] = Variable<int>(itemCount);
+    map['priority'] = Variable<int>(priority);
+    map['usage_count'] = Variable<int>(usageCount);
     map['is_dirty'] = Variable<bool>(isDirty);
     if (!nullToAbsent || lastSyncedAt != null) {
       map['last_synced_at'] = Variable<DateTime>(lastSyncedAt);
@@ -1965,6 +2121,12 @@ class CategoryEntry extends DataClass implements Insertable<CategoryEntry> {
           ? const Value.absent()
           : Value(parentId),
       level: Value(level),
+      imageUrl: imageUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(imageUrl),
+      itemCount: Value(itemCount),
+      priority: Value(priority),
+      usageCount: Value(usageCount),
       isDirty: Value(isDirty),
       lastSyncedAt: lastSyncedAt == null && nullToAbsent
           ? const Value.absent()
@@ -1982,6 +2144,10 @@ class CategoryEntry extends DataClass implements Insertable<CategoryEntry> {
       name: serializer.fromJson<String>(json['name']),
       parentId: serializer.fromJson<String?>(json['parentId']),
       level: serializer.fromJson<int>(json['level']),
+      imageUrl: serializer.fromJson<String?>(json['imageUrl']),
+      itemCount: serializer.fromJson<int>(json['itemCount']),
+      priority: serializer.fromJson<int>(json['priority']),
+      usageCount: serializer.fromJson<int>(json['usageCount']),
       isDirty: serializer.fromJson<bool>(json['isDirty']),
       lastSyncedAt: serializer.fromJson<DateTime?>(json['lastSyncedAt']),
     );
@@ -1994,6 +2160,10 @@ class CategoryEntry extends DataClass implements Insertable<CategoryEntry> {
       'name': serializer.toJson<String>(name),
       'parentId': serializer.toJson<String?>(parentId),
       'level': serializer.toJson<int>(level),
+      'imageUrl': serializer.toJson<String?>(imageUrl),
+      'itemCount': serializer.toJson<int>(itemCount),
+      'priority': serializer.toJson<int>(priority),
+      'usageCount': serializer.toJson<int>(usageCount),
       'isDirty': serializer.toJson<bool>(isDirty),
       'lastSyncedAt': serializer.toJson<DateTime?>(lastSyncedAt),
     };
@@ -2004,6 +2174,10 @@ class CategoryEntry extends DataClass implements Insertable<CategoryEntry> {
     String? name,
     Value<String?> parentId = const Value.absent(),
     int? level,
+    Value<String?> imageUrl = const Value.absent(),
+    int? itemCount,
+    int? priority,
+    int? usageCount,
     bool? isDirty,
     Value<DateTime?> lastSyncedAt = const Value.absent(),
   }) => CategoryEntry(
@@ -2011,6 +2185,10 @@ class CategoryEntry extends DataClass implements Insertable<CategoryEntry> {
     name: name ?? this.name,
     parentId: parentId.present ? parentId.value : this.parentId,
     level: level ?? this.level,
+    imageUrl: imageUrl.present ? imageUrl.value : this.imageUrl,
+    itemCount: itemCount ?? this.itemCount,
+    priority: priority ?? this.priority,
+    usageCount: usageCount ?? this.usageCount,
     isDirty: isDirty ?? this.isDirty,
     lastSyncedAt: lastSyncedAt.present ? lastSyncedAt.value : this.lastSyncedAt,
   );
@@ -2020,6 +2198,12 @@ class CategoryEntry extends DataClass implements Insertable<CategoryEntry> {
       name: data.name.present ? data.name.value : this.name,
       parentId: data.parentId.present ? data.parentId.value : this.parentId,
       level: data.level.present ? data.level.value : this.level,
+      imageUrl: data.imageUrl.present ? data.imageUrl.value : this.imageUrl,
+      itemCount: data.itemCount.present ? data.itemCount.value : this.itemCount,
+      priority: data.priority.present ? data.priority.value : this.priority,
+      usageCount: data.usageCount.present
+          ? data.usageCount.value
+          : this.usageCount,
       isDirty: data.isDirty.present ? data.isDirty.value : this.isDirty,
       lastSyncedAt: data.lastSyncedAt.present
           ? data.lastSyncedAt.value
@@ -2034,6 +2218,10 @@ class CategoryEntry extends DataClass implements Insertable<CategoryEntry> {
           ..write('name: $name, ')
           ..write('parentId: $parentId, ')
           ..write('level: $level, ')
+          ..write('imageUrl: $imageUrl, ')
+          ..write('itemCount: $itemCount, ')
+          ..write('priority: $priority, ')
+          ..write('usageCount: $usageCount, ')
           ..write('isDirty: $isDirty, ')
           ..write('lastSyncedAt: $lastSyncedAt')
           ..write(')'))
@@ -2041,8 +2229,18 @@ class CategoryEntry extends DataClass implements Insertable<CategoryEntry> {
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, name, parentId, level, isDirty, lastSyncedAt);
+  int get hashCode => Object.hash(
+    id,
+    name,
+    parentId,
+    level,
+    imageUrl,
+    itemCount,
+    priority,
+    usageCount,
+    isDirty,
+    lastSyncedAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2051,6 +2249,10 @@ class CategoryEntry extends DataClass implements Insertable<CategoryEntry> {
           other.name == this.name &&
           other.parentId == this.parentId &&
           other.level == this.level &&
+          other.imageUrl == this.imageUrl &&
+          other.itemCount == this.itemCount &&
+          other.priority == this.priority &&
+          other.usageCount == this.usageCount &&
           other.isDirty == this.isDirty &&
           other.lastSyncedAt == this.lastSyncedAt);
 }
@@ -2060,6 +2262,10 @@ class CategoriesTableCompanion extends UpdateCompanion<CategoryEntry> {
   final Value<String> name;
   final Value<String?> parentId;
   final Value<int> level;
+  final Value<String?> imageUrl;
+  final Value<int> itemCount;
+  final Value<int> priority;
+  final Value<int> usageCount;
   final Value<bool> isDirty;
   final Value<DateTime?> lastSyncedAt;
   final Value<int> rowid;
@@ -2068,6 +2274,10 @@ class CategoriesTableCompanion extends UpdateCompanion<CategoryEntry> {
     this.name = const Value.absent(),
     this.parentId = const Value.absent(),
     this.level = const Value.absent(),
+    this.imageUrl = const Value.absent(),
+    this.itemCount = const Value.absent(),
+    this.priority = const Value.absent(),
+    this.usageCount = const Value.absent(),
     this.isDirty = const Value.absent(),
     this.lastSyncedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -2077,6 +2287,10 @@ class CategoriesTableCompanion extends UpdateCompanion<CategoryEntry> {
     required String name,
     this.parentId = const Value.absent(),
     this.level = const Value.absent(),
+    this.imageUrl = const Value.absent(),
+    this.itemCount = const Value.absent(),
+    this.priority = const Value.absent(),
+    this.usageCount = const Value.absent(),
     this.isDirty = const Value.absent(),
     this.lastSyncedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -2087,6 +2301,10 @@ class CategoriesTableCompanion extends UpdateCompanion<CategoryEntry> {
     Expression<String>? name,
     Expression<String>? parentId,
     Expression<int>? level,
+    Expression<String>? imageUrl,
+    Expression<int>? itemCount,
+    Expression<int>? priority,
+    Expression<int>? usageCount,
     Expression<bool>? isDirty,
     Expression<DateTime>? lastSyncedAt,
     Expression<int>? rowid,
@@ -2096,6 +2314,10 @@ class CategoriesTableCompanion extends UpdateCompanion<CategoryEntry> {
       if (name != null) 'name': name,
       if (parentId != null) 'parent_id': parentId,
       if (level != null) 'level': level,
+      if (imageUrl != null) 'image_url': imageUrl,
+      if (itemCount != null) 'item_count': itemCount,
+      if (priority != null) 'priority': priority,
+      if (usageCount != null) 'usage_count': usageCount,
       if (isDirty != null) 'is_dirty': isDirty,
       if (lastSyncedAt != null) 'last_synced_at': lastSyncedAt,
       if (rowid != null) 'rowid': rowid,
@@ -2107,6 +2329,10 @@ class CategoriesTableCompanion extends UpdateCompanion<CategoryEntry> {
     Value<String>? name,
     Value<String?>? parentId,
     Value<int>? level,
+    Value<String?>? imageUrl,
+    Value<int>? itemCount,
+    Value<int>? priority,
+    Value<int>? usageCount,
     Value<bool>? isDirty,
     Value<DateTime?>? lastSyncedAt,
     Value<int>? rowid,
@@ -2116,6 +2342,10 @@ class CategoriesTableCompanion extends UpdateCompanion<CategoryEntry> {
       name: name ?? this.name,
       parentId: parentId ?? this.parentId,
       level: level ?? this.level,
+      imageUrl: imageUrl ?? this.imageUrl,
+      itemCount: itemCount ?? this.itemCount,
+      priority: priority ?? this.priority,
+      usageCount: usageCount ?? this.usageCount,
       isDirty: isDirty ?? this.isDirty,
       lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
       rowid: rowid ?? this.rowid,
@@ -2137,6 +2367,18 @@ class CategoriesTableCompanion extends UpdateCompanion<CategoryEntry> {
     if (level.present) {
       map['level'] = Variable<int>(level.value);
     }
+    if (imageUrl.present) {
+      map['image_url'] = Variable<String>(imageUrl.value);
+    }
+    if (itemCount.present) {
+      map['item_count'] = Variable<int>(itemCount.value);
+    }
+    if (priority.present) {
+      map['priority'] = Variable<int>(priority.value);
+    }
+    if (usageCount.present) {
+      map['usage_count'] = Variable<int>(usageCount.value);
+    }
     if (isDirty.present) {
       map['is_dirty'] = Variable<bool>(isDirty.value);
     }
@@ -2156,6 +2398,10 @@ class CategoriesTableCompanion extends UpdateCompanion<CategoryEntry> {
           ..write('name: $name, ')
           ..write('parentId: $parentId, ')
           ..write('level: $level, ')
+          ..write('imageUrl: $imageUrl, ')
+          ..write('itemCount: $itemCount, ')
+          ..write('priority: $priority, ')
+          ..write('usageCount: $usageCount, ')
           ..write('isDirty: $isDirty, ')
           ..write('lastSyncedAt: $lastSyncedAt, ')
           ..write('rowid: $rowid')
@@ -2488,47 +2734,16 @@ class $BusinessTableTable extends BusinessTable
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _tinMeta = const VerificationMeta('tin');
-  @override
-  late final GeneratedColumn<String> tin = GeneratedColumn<String>(
-    'tin',
-    aliasedName,
-    false,
-    additionalChecks: GeneratedColumn.checkTextLength(
-      minTextLength: 9,
-      maxTextLength: 15,
-    ),
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _registrationNoMeta = const VerificationMeta(
-    'registrationNo',
+  static const VerificationMeta _phoneNumberMeta = const VerificationMeta(
+    'phoneNumber',
   );
   @override
-  late final GeneratedColumn<String> registrationNo = GeneratedColumn<String>(
-    'registration_no',
+  late final GeneratedColumn<String> phoneNumber = GeneratedColumn<String>(
+    'phone_number',
     aliasedName,
-    false,
+    true,
     type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _tierMeta = const VerificationMeta('tier');
-  @override
-  late final GeneratedColumn<String> tier = GeneratedColumn<String>(
-    'tier',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _statusMeta = const VerificationMeta('status');
-  @override
-  late final GeneratedColumn<String> status = GeneratedColumn<String>(
-    'status',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _latitudeMeta = const VerificationMeta(
     'latitude',
@@ -2537,9 +2752,9 @@ class $BusinessTableTable extends BusinessTable
   late final GeneratedColumn<double> latitude = GeneratedColumn<double>(
     'latitude',
     aliasedName,
-    false,
+    true,
     type: DriftSqlType.double,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _longitudeMeta = const VerificationMeta(
     'longitude',
@@ -2548,18 +2763,27 @@ class $BusinessTableTable extends BusinessTable
   late final GeneratedColumn<double> longitude = GeneratedColumn<double>(
     'longitude',
     aliasedName,
-    false,
+    true,
     type: DriftSqlType.double,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _regionMeta = const VerificationMeta('region');
   @override
   late final GeneratedColumn<String> region = GeneratedColumn<String>(
     'region',
     aliasedName,
-    false,
+    true,
     type: DriftSqlType.string,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _cityMeta = const VerificationMeta('city');
+  @override
+  late final GeneratedColumn<String> city = GeneratedColumn<String>(
+    'city',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _physicalAddressMeta = const VerificationMeta(
     'physicalAddress',
@@ -2568,76 +2792,21 @@ class $BusinessTableTable extends BusinessTable
   late final GeneratedColumn<String> physicalAddress = GeneratedColumn<String>(
     'physical_address',
     aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _creditLimitMeta = const VerificationMeta(
-    'creditLimit',
-  );
-  @override
-  late final GeneratedColumn<double> creditLimit = GeneratedColumn<double>(
-    'credit_limit',
-    aliasedName,
-    false,
-    type: DriftSqlType.double,
-    requiredDuringInsert: false,
-    defaultValue: Constant(0),
-  );
-  static const VerificationMeta _currentBalanceMeta = const VerificationMeta(
-    'currentBalance',
-  );
-  @override
-  late final GeneratedColumn<double> currentBalance = GeneratedColumn<double>(
-    'current_balance',
-    aliasedName,
-    false,
-    type: DriftSqlType.double,
-    requiredDuringInsert: false,
-    defaultValue: Constant(0),
-  );
-  static const VerificationMeta _primaryMoMoNumberMeta = const VerificationMeta(
-    'primaryMoMoNumber',
-  );
-  @override
-  late final GeneratedColumn<String> primaryMoMoNumber =
-      GeneratedColumn<String>(
-        'primary_mo_mo_number',
-        aliasedName,
-        false,
-        type: DriftSqlType.string,
-        requiredDuringInsert: true,
-      );
-  static const VerificationMeta _slugMeta = const VerificationMeta('slug');
-  @override
-  late final GeneratedColumn<String> slug = GeneratedColumn<String>(
-    'slug',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _descriptionMeta = const VerificationMeta(
-    'description',
-  );
-  @override
-  late final GeneratedColumn<String> description = GeneratedColumn<String>(
-    'description',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _logoUrlMeta = const VerificationMeta(
-    'logoUrl',
-  );
-  @override
-  late final GeneratedColumn<String> logoUrl = GeneratedColumn<String>(
-    'logo_url',
-    aliasedName,
     true,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
   );
   static const VerificationMeta _isDirtyMeta = const VerificationMeta(
     'isDirty',
@@ -2669,20 +2838,13 @@ class $BusinessTableTable extends BusinessTable
   List<GeneratedColumn> get $columns => [
     id,
     legalName,
-    tin,
-    registrationNo,
-    tier,
-    status,
+    phoneNumber,
     latitude,
     longitude,
     region,
+    city,
     physicalAddress,
-    creditLimit,
-    currentBalance,
-    primaryMoMoNumber,
-    slug,
-    description,
-    logoUrl,
+    updatedAt,
     isDirty,
     lastSyncedAt,
   ];
@@ -2711,64 +2873,38 @@ class $BusinessTableTable extends BusinessTable
     } else if (isInserting) {
       context.missing(_legalNameMeta);
     }
-    if (data.containsKey('tin')) {
+    if (data.containsKey('phone_number')) {
       context.handle(
-        _tinMeta,
-        tin.isAcceptableOrUnknown(data['tin']!, _tinMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_tinMeta);
-    }
-    if (data.containsKey('registration_no')) {
-      context.handle(
-        _registrationNoMeta,
-        registrationNo.isAcceptableOrUnknown(
-          data['registration_no']!,
-          _registrationNoMeta,
+        _phoneNumberMeta,
+        phoneNumber.isAcceptableOrUnknown(
+          data['phone_number']!,
+          _phoneNumberMeta,
         ),
       );
-    } else if (isInserting) {
-      context.missing(_registrationNoMeta);
-    }
-    if (data.containsKey('tier')) {
-      context.handle(
-        _tierMeta,
-        tier.isAcceptableOrUnknown(data['tier']!, _tierMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_tierMeta);
-    }
-    if (data.containsKey('status')) {
-      context.handle(
-        _statusMeta,
-        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_statusMeta);
     }
     if (data.containsKey('latitude')) {
       context.handle(
         _latitudeMeta,
         latitude.isAcceptableOrUnknown(data['latitude']!, _latitudeMeta),
       );
-    } else if (isInserting) {
-      context.missing(_latitudeMeta);
     }
     if (data.containsKey('longitude')) {
       context.handle(
         _longitudeMeta,
         longitude.isAcceptableOrUnknown(data['longitude']!, _longitudeMeta),
       );
-    } else if (isInserting) {
-      context.missing(_longitudeMeta);
     }
     if (data.containsKey('region')) {
       context.handle(
         _regionMeta,
         region.isAcceptableOrUnknown(data['region']!, _regionMeta),
       );
-    } else if (isInserting) {
-      context.missing(_regionMeta);
+    }
+    if (data.containsKey('city')) {
+      context.handle(
+        _cityMeta,
+        city.isAcceptableOrUnknown(data['city']!, _cityMeta),
+      );
     }
     if (data.containsKey('physical_address')) {
       context.handle(
@@ -2778,61 +2914,11 @@ class $BusinessTableTable extends BusinessTable
           _physicalAddressMeta,
         ),
       );
-    } else if (isInserting) {
-      context.missing(_physicalAddressMeta);
     }
-    if (data.containsKey('credit_limit')) {
+    if (data.containsKey('updated_at')) {
       context.handle(
-        _creditLimitMeta,
-        creditLimit.isAcceptableOrUnknown(
-          data['credit_limit']!,
-          _creditLimitMeta,
-        ),
-      );
-    }
-    if (data.containsKey('current_balance')) {
-      context.handle(
-        _currentBalanceMeta,
-        currentBalance.isAcceptableOrUnknown(
-          data['current_balance']!,
-          _currentBalanceMeta,
-        ),
-      );
-    }
-    if (data.containsKey('primary_mo_mo_number')) {
-      context.handle(
-        _primaryMoMoNumberMeta,
-        primaryMoMoNumber.isAcceptableOrUnknown(
-          data['primary_mo_mo_number']!,
-          _primaryMoMoNumberMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_primaryMoMoNumberMeta);
-    }
-    if (data.containsKey('slug')) {
-      context.handle(
-        _slugMeta,
-        slug.isAcceptableOrUnknown(data['slug']!, _slugMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_slugMeta);
-    }
-    if (data.containsKey('description')) {
-      context.handle(
-        _descriptionMeta,
-        description.isAcceptableOrUnknown(
-          data['description']!,
-          _descriptionMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_descriptionMeta);
-    }
-    if (data.containsKey('logo_url')) {
-      context.handle(
-        _logoUrlMeta,
-        logoUrl.isAcceptableOrUnknown(data['logo_url']!, _logoUrlMeta),
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
       );
     }
     if (data.containsKey('is_dirty')) {
@@ -2867,61 +2953,33 @@ class $BusinessTableTable extends BusinessTable
         DriftSqlType.string,
         data['${effectivePrefix}legal_name'],
       )!,
-      tin: attachedDatabase.typeMapping.read(
+      phoneNumber: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}tin'],
-      )!,
-      registrationNo: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}registration_no'],
-      )!,
-      tier: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}tier'],
-      )!,
-      status: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}status'],
-      )!,
+        data['${effectivePrefix}phone_number'],
+      ),
       latitude: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}latitude'],
-      )!,
+      ),
       longitude: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}longitude'],
-      )!,
+      ),
       region: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}region'],
-      )!,
+      ),
+      city: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}city'],
+      ),
       physicalAddress: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}physical_address'],
-      )!,
-      creditLimit: attachedDatabase.typeMapping.read(
-        DriftSqlType.double,
-        data['${effectivePrefix}credit_limit'],
-      )!,
-      currentBalance: attachedDatabase.typeMapping.read(
-        DriftSqlType.double,
-        data['${effectivePrefix}current_balance'],
-      )!,
-      primaryMoMoNumber: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}primary_mo_mo_number'],
-      )!,
-      slug: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}slug'],
-      )!,
-      description: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}description'],
-      )!,
-      logoUrl: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}logo_url'],
+      ),
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
       ),
       isDirty: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
@@ -2943,39 +3001,25 @@ class $BusinessTableTable extends BusinessTable
 class BusinessEntry extends DataClass implements Insertable<BusinessEntry> {
   final String id;
   final String legalName;
-  final String tin;
-  final String registrationNo;
-  final String tier;
-  final String status;
-  final double latitude;
-  final double longitude;
-  final String region;
-  final String physicalAddress;
-  final double creditLimit;
-  final double currentBalance;
-  final String primaryMoMoNumber;
-  final String slug;
-  final String description;
-  final String? logoUrl;
+  final String? phoneNumber;
+  final double? latitude;
+  final double? longitude;
+  final String? region;
+  final String? city;
+  final String? physicalAddress;
+  final DateTime? updatedAt;
   final bool isDirty;
   final DateTime? lastSyncedAt;
   const BusinessEntry({
     required this.id,
     required this.legalName,
-    required this.tin,
-    required this.registrationNo,
-    required this.tier,
-    required this.status,
-    required this.latitude,
-    required this.longitude,
-    required this.region,
-    required this.physicalAddress,
-    required this.creditLimit,
-    required this.currentBalance,
-    required this.primaryMoMoNumber,
-    required this.slug,
-    required this.description,
-    this.logoUrl,
+    this.phoneNumber,
+    this.latitude,
+    this.longitude,
+    this.region,
+    this.city,
+    this.physicalAddress,
+    this.updatedAt,
     required this.isDirty,
     this.lastSyncedAt,
   });
@@ -2984,21 +3028,26 @@ class BusinessEntry extends DataClass implements Insertable<BusinessEntry> {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
     map['legal_name'] = Variable<String>(legalName);
-    map['tin'] = Variable<String>(tin);
-    map['registration_no'] = Variable<String>(registrationNo);
-    map['tier'] = Variable<String>(tier);
-    map['status'] = Variable<String>(status);
-    map['latitude'] = Variable<double>(latitude);
-    map['longitude'] = Variable<double>(longitude);
-    map['region'] = Variable<String>(region);
-    map['physical_address'] = Variable<String>(physicalAddress);
-    map['credit_limit'] = Variable<double>(creditLimit);
-    map['current_balance'] = Variable<double>(currentBalance);
-    map['primary_mo_mo_number'] = Variable<String>(primaryMoMoNumber);
-    map['slug'] = Variable<String>(slug);
-    map['description'] = Variable<String>(description);
-    if (!nullToAbsent || logoUrl != null) {
-      map['logo_url'] = Variable<String>(logoUrl);
+    if (!nullToAbsent || phoneNumber != null) {
+      map['phone_number'] = Variable<String>(phoneNumber);
+    }
+    if (!nullToAbsent || latitude != null) {
+      map['latitude'] = Variable<double>(latitude);
+    }
+    if (!nullToAbsent || longitude != null) {
+      map['longitude'] = Variable<double>(longitude);
+    }
+    if (!nullToAbsent || region != null) {
+      map['region'] = Variable<String>(region);
+    }
+    if (!nullToAbsent || city != null) {
+      map['city'] = Variable<String>(city);
+    }
+    if (!nullToAbsent || physicalAddress != null) {
+      map['physical_address'] = Variable<String>(physicalAddress);
+    }
+    if (!nullToAbsent || updatedAt != null) {
+      map['updated_at'] = Variable<DateTime>(updatedAt);
     }
     map['is_dirty'] = Variable<bool>(isDirty);
     if (!nullToAbsent || lastSyncedAt != null) {
@@ -3011,22 +3060,25 @@ class BusinessEntry extends DataClass implements Insertable<BusinessEntry> {
     return BusinessTableCompanion(
       id: Value(id),
       legalName: Value(legalName),
-      tin: Value(tin),
-      registrationNo: Value(registrationNo),
-      tier: Value(tier),
-      status: Value(status),
-      latitude: Value(latitude),
-      longitude: Value(longitude),
-      region: Value(region),
-      physicalAddress: Value(physicalAddress),
-      creditLimit: Value(creditLimit),
-      currentBalance: Value(currentBalance),
-      primaryMoMoNumber: Value(primaryMoMoNumber),
-      slug: Value(slug),
-      description: Value(description),
-      logoUrl: logoUrl == null && nullToAbsent
+      phoneNumber: phoneNumber == null && nullToAbsent
           ? const Value.absent()
-          : Value(logoUrl),
+          : Value(phoneNumber),
+      latitude: latitude == null && nullToAbsent
+          ? const Value.absent()
+          : Value(latitude),
+      longitude: longitude == null && nullToAbsent
+          ? const Value.absent()
+          : Value(longitude),
+      region: region == null && nullToAbsent
+          ? const Value.absent()
+          : Value(region),
+      city: city == null && nullToAbsent ? const Value.absent() : Value(city),
+      physicalAddress: physicalAddress == null && nullToAbsent
+          ? const Value.absent()
+          : Value(physicalAddress),
+      updatedAt: updatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(updatedAt),
       isDirty: Value(isDirty),
       lastSyncedAt: lastSyncedAt == null && nullToAbsent
           ? const Value.absent()
@@ -3042,20 +3094,13 @@ class BusinessEntry extends DataClass implements Insertable<BusinessEntry> {
     return BusinessEntry(
       id: serializer.fromJson<String>(json['id']),
       legalName: serializer.fromJson<String>(json['legalName']),
-      tin: serializer.fromJson<String>(json['tin']),
-      registrationNo: serializer.fromJson<String>(json['registrationNo']),
-      tier: serializer.fromJson<String>(json['tier']),
-      status: serializer.fromJson<String>(json['status']),
-      latitude: serializer.fromJson<double>(json['latitude']),
-      longitude: serializer.fromJson<double>(json['longitude']),
-      region: serializer.fromJson<String>(json['region']),
-      physicalAddress: serializer.fromJson<String>(json['physicalAddress']),
-      creditLimit: serializer.fromJson<double>(json['creditLimit']),
-      currentBalance: serializer.fromJson<double>(json['currentBalance']),
-      primaryMoMoNumber: serializer.fromJson<String>(json['primaryMoMoNumber']),
-      slug: serializer.fromJson<String>(json['slug']),
-      description: serializer.fromJson<String>(json['description']),
-      logoUrl: serializer.fromJson<String?>(json['logoUrl']),
+      phoneNumber: serializer.fromJson<String?>(json['phoneNumber']),
+      latitude: serializer.fromJson<double?>(json['latitude']),
+      longitude: serializer.fromJson<double?>(json['longitude']),
+      region: serializer.fromJson<String?>(json['region']),
+      city: serializer.fromJson<String?>(json['city']),
+      physicalAddress: serializer.fromJson<String?>(json['physicalAddress']),
+      updatedAt: serializer.fromJson<DateTime?>(json['updatedAt']),
       isDirty: serializer.fromJson<bool>(json['isDirty']),
       lastSyncedAt: serializer.fromJson<DateTime?>(json['lastSyncedAt']),
     );
@@ -3066,20 +3111,13 @@ class BusinessEntry extends DataClass implements Insertable<BusinessEntry> {
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
       'legalName': serializer.toJson<String>(legalName),
-      'tin': serializer.toJson<String>(tin),
-      'registrationNo': serializer.toJson<String>(registrationNo),
-      'tier': serializer.toJson<String>(tier),
-      'status': serializer.toJson<String>(status),
-      'latitude': serializer.toJson<double>(latitude),
-      'longitude': serializer.toJson<double>(longitude),
-      'region': serializer.toJson<String>(region),
-      'physicalAddress': serializer.toJson<String>(physicalAddress),
-      'creditLimit': serializer.toJson<double>(creditLimit),
-      'currentBalance': serializer.toJson<double>(currentBalance),
-      'primaryMoMoNumber': serializer.toJson<String>(primaryMoMoNumber),
-      'slug': serializer.toJson<String>(slug),
-      'description': serializer.toJson<String>(description),
-      'logoUrl': serializer.toJson<String?>(logoUrl),
+      'phoneNumber': serializer.toJson<String?>(phoneNumber),
+      'latitude': serializer.toJson<double?>(latitude),
+      'longitude': serializer.toJson<double?>(longitude),
+      'region': serializer.toJson<String?>(region),
+      'city': serializer.toJson<String?>(city),
+      'physicalAddress': serializer.toJson<String?>(physicalAddress),
+      'updatedAt': serializer.toJson<DateTime?>(updatedAt),
       'isDirty': serializer.toJson<bool>(isDirty),
       'lastSyncedAt': serializer.toJson<DateTime?>(lastSyncedAt),
     };
@@ -3088,39 +3126,27 @@ class BusinessEntry extends DataClass implements Insertable<BusinessEntry> {
   BusinessEntry copyWith({
     String? id,
     String? legalName,
-    String? tin,
-    String? registrationNo,
-    String? tier,
-    String? status,
-    double? latitude,
-    double? longitude,
-    String? region,
-    String? physicalAddress,
-    double? creditLimit,
-    double? currentBalance,
-    String? primaryMoMoNumber,
-    String? slug,
-    String? description,
-    Value<String?> logoUrl = const Value.absent(),
+    Value<String?> phoneNumber = const Value.absent(),
+    Value<double?> latitude = const Value.absent(),
+    Value<double?> longitude = const Value.absent(),
+    Value<String?> region = const Value.absent(),
+    Value<String?> city = const Value.absent(),
+    Value<String?> physicalAddress = const Value.absent(),
+    Value<DateTime?> updatedAt = const Value.absent(),
     bool? isDirty,
     Value<DateTime?> lastSyncedAt = const Value.absent(),
   }) => BusinessEntry(
     id: id ?? this.id,
     legalName: legalName ?? this.legalName,
-    tin: tin ?? this.tin,
-    registrationNo: registrationNo ?? this.registrationNo,
-    tier: tier ?? this.tier,
-    status: status ?? this.status,
-    latitude: latitude ?? this.latitude,
-    longitude: longitude ?? this.longitude,
-    region: region ?? this.region,
-    physicalAddress: physicalAddress ?? this.physicalAddress,
-    creditLimit: creditLimit ?? this.creditLimit,
-    currentBalance: currentBalance ?? this.currentBalance,
-    primaryMoMoNumber: primaryMoMoNumber ?? this.primaryMoMoNumber,
-    slug: slug ?? this.slug,
-    description: description ?? this.description,
-    logoUrl: logoUrl.present ? logoUrl.value : this.logoUrl,
+    phoneNumber: phoneNumber.present ? phoneNumber.value : this.phoneNumber,
+    latitude: latitude.present ? latitude.value : this.latitude,
+    longitude: longitude.present ? longitude.value : this.longitude,
+    region: region.present ? region.value : this.region,
+    city: city.present ? city.value : this.city,
+    physicalAddress: physicalAddress.present
+        ? physicalAddress.value
+        : this.physicalAddress,
+    updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
     isDirty: isDirty ?? this.isDirty,
     lastSyncedAt: lastSyncedAt.present ? lastSyncedAt.value : this.lastSyncedAt,
   );
@@ -3128,32 +3154,17 @@ class BusinessEntry extends DataClass implements Insertable<BusinessEntry> {
     return BusinessEntry(
       id: data.id.present ? data.id.value : this.id,
       legalName: data.legalName.present ? data.legalName.value : this.legalName,
-      tin: data.tin.present ? data.tin.value : this.tin,
-      registrationNo: data.registrationNo.present
-          ? data.registrationNo.value
-          : this.registrationNo,
-      tier: data.tier.present ? data.tier.value : this.tier,
-      status: data.status.present ? data.status.value : this.status,
+      phoneNumber: data.phoneNumber.present
+          ? data.phoneNumber.value
+          : this.phoneNumber,
       latitude: data.latitude.present ? data.latitude.value : this.latitude,
       longitude: data.longitude.present ? data.longitude.value : this.longitude,
       region: data.region.present ? data.region.value : this.region,
+      city: data.city.present ? data.city.value : this.city,
       physicalAddress: data.physicalAddress.present
           ? data.physicalAddress.value
           : this.physicalAddress,
-      creditLimit: data.creditLimit.present
-          ? data.creditLimit.value
-          : this.creditLimit,
-      currentBalance: data.currentBalance.present
-          ? data.currentBalance.value
-          : this.currentBalance,
-      primaryMoMoNumber: data.primaryMoMoNumber.present
-          ? data.primaryMoMoNumber.value
-          : this.primaryMoMoNumber,
-      slug: data.slug.present ? data.slug.value : this.slug,
-      description: data.description.present
-          ? data.description.value
-          : this.description,
-      logoUrl: data.logoUrl.present ? data.logoUrl.value : this.logoUrl,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       isDirty: data.isDirty.present ? data.isDirty.value : this.isDirty,
       lastSyncedAt: data.lastSyncedAt.present
           ? data.lastSyncedAt.value
@@ -3166,20 +3177,13 @@ class BusinessEntry extends DataClass implements Insertable<BusinessEntry> {
     return (StringBuffer('BusinessEntry(')
           ..write('id: $id, ')
           ..write('legalName: $legalName, ')
-          ..write('tin: $tin, ')
-          ..write('registrationNo: $registrationNo, ')
-          ..write('tier: $tier, ')
-          ..write('status: $status, ')
+          ..write('phoneNumber: $phoneNumber, ')
           ..write('latitude: $latitude, ')
           ..write('longitude: $longitude, ')
           ..write('region: $region, ')
+          ..write('city: $city, ')
           ..write('physicalAddress: $physicalAddress, ')
-          ..write('creditLimit: $creditLimit, ')
-          ..write('currentBalance: $currentBalance, ')
-          ..write('primaryMoMoNumber: $primaryMoMoNumber, ')
-          ..write('slug: $slug, ')
-          ..write('description: $description, ')
-          ..write('logoUrl: $logoUrl, ')
+          ..write('updatedAt: $updatedAt, ')
           ..write('isDirty: $isDirty, ')
           ..write('lastSyncedAt: $lastSyncedAt')
           ..write(')'))
@@ -3190,20 +3194,13 @@ class BusinessEntry extends DataClass implements Insertable<BusinessEntry> {
   int get hashCode => Object.hash(
     id,
     legalName,
-    tin,
-    registrationNo,
-    tier,
-    status,
+    phoneNumber,
     latitude,
     longitude,
     region,
+    city,
     physicalAddress,
-    creditLimit,
-    currentBalance,
-    primaryMoMoNumber,
-    slug,
-    description,
-    logoUrl,
+    updatedAt,
     isDirty,
     lastSyncedAt,
   );
@@ -3213,20 +3210,13 @@ class BusinessEntry extends DataClass implements Insertable<BusinessEntry> {
       (other is BusinessEntry &&
           other.id == this.id &&
           other.legalName == this.legalName &&
-          other.tin == this.tin &&
-          other.registrationNo == this.registrationNo &&
-          other.tier == this.tier &&
-          other.status == this.status &&
+          other.phoneNumber == this.phoneNumber &&
           other.latitude == this.latitude &&
           other.longitude == this.longitude &&
           other.region == this.region &&
+          other.city == this.city &&
           other.physicalAddress == this.physicalAddress &&
-          other.creditLimit == this.creditLimit &&
-          other.currentBalance == this.currentBalance &&
-          other.primaryMoMoNumber == this.primaryMoMoNumber &&
-          other.slug == this.slug &&
-          other.description == this.description &&
-          other.logoUrl == this.logoUrl &&
+          other.updatedAt == this.updatedAt &&
           other.isDirty == this.isDirty &&
           other.lastSyncedAt == this.lastSyncedAt);
 }
@@ -3234,40 +3224,26 @@ class BusinessEntry extends DataClass implements Insertable<BusinessEntry> {
 class BusinessTableCompanion extends UpdateCompanion<BusinessEntry> {
   final Value<String> id;
   final Value<String> legalName;
-  final Value<String> tin;
-  final Value<String> registrationNo;
-  final Value<String> tier;
-  final Value<String> status;
-  final Value<double> latitude;
-  final Value<double> longitude;
-  final Value<String> region;
-  final Value<String> physicalAddress;
-  final Value<double> creditLimit;
-  final Value<double> currentBalance;
-  final Value<String> primaryMoMoNumber;
-  final Value<String> slug;
-  final Value<String> description;
-  final Value<String?> logoUrl;
+  final Value<String?> phoneNumber;
+  final Value<double?> latitude;
+  final Value<double?> longitude;
+  final Value<String?> region;
+  final Value<String?> city;
+  final Value<String?> physicalAddress;
+  final Value<DateTime?> updatedAt;
   final Value<bool> isDirty;
   final Value<DateTime?> lastSyncedAt;
   final Value<int> rowid;
   const BusinessTableCompanion({
     this.id = const Value.absent(),
     this.legalName = const Value.absent(),
-    this.tin = const Value.absent(),
-    this.registrationNo = const Value.absent(),
-    this.tier = const Value.absent(),
-    this.status = const Value.absent(),
+    this.phoneNumber = const Value.absent(),
     this.latitude = const Value.absent(),
     this.longitude = const Value.absent(),
     this.region = const Value.absent(),
+    this.city = const Value.absent(),
     this.physicalAddress = const Value.absent(),
-    this.creditLimit = const Value.absent(),
-    this.currentBalance = const Value.absent(),
-    this.primaryMoMoNumber = const Value.absent(),
-    this.slug = const Value.absent(),
-    this.description = const Value.absent(),
-    this.logoUrl = const Value.absent(),
+    this.updatedAt = const Value.absent(),
     this.isDirty = const Value.absent(),
     this.lastSyncedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -3275,53 +3251,28 @@ class BusinessTableCompanion extends UpdateCompanion<BusinessEntry> {
   BusinessTableCompanion.insert({
     required String id,
     required String legalName,
-    required String tin,
-    required String registrationNo,
-    required String tier,
-    required String status,
-    required double latitude,
-    required double longitude,
-    required String region,
-    required String physicalAddress,
-    this.creditLimit = const Value.absent(),
-    this.currentBalance = const Value.absent(),
-    required String primaryMoMoNumber,
-    required String slug,
-    required String description,
-    this.logoUrl = const Value.absent(),
+    this.phoneNumber = const Value.absent(),
+    this.latitude = const Value.absent(),
+    this.longitude = const Value.absent(),
+    this.region = const Value.absent(),
+    this.city = const Value.absent(),
+    this.physicalAddress = const Value.absent(),
+    this.updatedAt = const Value.absent(),
     this.isDirty = const Value.absent(),
     this.lastSyncedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
-       legalName = Value(legalName),
-       tin = Value(tin),
-       registrationNo = Value(registrationNo),
-       tier = Value(tier),
-       status = Value(status),
-       latitude = Value(latitude),
-       longitude = Value(longitude),
-       region = Value(region),
-       physicalAddress = Value(physicalAddress),
-       primaryMoMoNumber = Value(primaryMoMoNumber),
-       slug = Value(slug),
-       description = Value(description);
+       legalName = Value(legalName);
   static Insertable<BusinessEntry> custom({
     Expression<String>? id,
     Expression<String>? legalName,
-    Expression<String>? tin,
-    Expression<String>? registrationNo,
-    Expression<String>? tier,
-    Expression<String>? status,
+    Expression<String>? phoneNumber,
     Expression<double>? latitude,
     Expression<double>? longitude,
     Expression<String>? region,
+    Expression<String>? city,
     Expression<String>? physicalAddress,
-    Expression<double>? creditLimit,
-    Expression<double>? currentBalance,
-    Expression<String>? primaryMoMoNumber,
-    Expression<String>? slug,
-    Expression<String>? description,
-    Expression<String>? logoUrl,
+    Expression<DateTime>? updatedAt,
     Expression<bool>? isDirty,
     Expression<DateTime>? lastSyncedAt,
     Expression<int>? rowid,
@@ -3329,20 +3280,13 @@ class BusinessTableCompanion extends UpdateCompanion<BusinessEntry> {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (legalName != null) 'legal_name': legalName,
-      if (tin != null) 'tin': tin,
-      if (registrationNo != null) 'registration_no': registrationNo,
-      if (tier != null) 'tier': tier,
-      if (status != null) 'status': status,
+      if (phoneNumber != null) 'phone_number': phoneNumber,
       if (latitude != null) 'latitude': latitude,
       if (longitude != null) 'longitude': longitude,
       if (region != null) 'region': region,
+      if (city != null) 'city': city,
       if (physicalAddress != null) 'physical_address': physicalAddress,
-      if (creditLimit != null) 'credit_limit': creditLimit,
-      if (currentBalance != null) 'current_balance': currentBalance,
-      if (primaryMoMoNumber != null) 'primary_mo_mo_number': primaryMoMoNumber,
-      if (slug != null) 'slug': slug,
-      if (description != null) 'description': description,
-      if (logoUrl != null) 'logo_url': logoUrl,
+      if (updatedAt != null) 'updated_at': updatedAt,
       if (isDirty != null) 'is_dirty': isDirty,
       if (lastSyncedAt != null) 'last_synced_at': lastSyncedAt,
       if (rowid != null) 'rowid': rowid,
@@ -3352,20 +3296,13 @@ class BusinessTableCompanion extends UpdateCompanion<BusinessEntry> {
   BusinessTableCompanion copyWith({
     Value<String>? id,
     Value<String>? legalName,
-    Value<String>? tin,
-    Value<String>? registrationNo,
-    Value<String>? tier,
-    Value<String>? status,
-    Value<double>? latitude,
-    Value<double>? longitude,
-    Value<String>? region,
-    Value<String>? physicalAddress,
-    Value<double>? creditLimit,
-    Value<double>? currentBalance,
-    Value<String>? primaryMoMoNumber,
-    Value<String>? slug,
-    Value<String>? description,
-    Value<String?>? logoUrl,
+    Value<String?>? phoneNumber,
+    Value<double?>? latitude,
+    Value<double?>? longitude,
+    Value<String?>? region,
+    Value<String?>? city,
+    Value<String?>? physicalAddress,
+    Value<DateTime?>? updatedAt,
     Value<bool>? isDirty,
     Value<DateTime?>? lastSyncedAt,
     Value<int>? rowid,
@@ -3373,20 +3310,13 @@ class BusinessTableCompanion extends UpdateCompanion<BusinessEntry> {
     return BusinessTableCompanion(
       id: id ?? this.id,
       legalName: legalName ?? this.legalName,
-      tin: tin ?? this.tin,
-      registrationNo: registrationNo ?? this.registrationNo,
-      tier: tier ?? this.tier,
-      status: status ?? this.status,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       region: region ?? this.region,
+      city: city ?? this.city,
       physicalAddress: physicalAddress ?? this.physicalAddress,
-      creditLimit: creditLimit ?? this.creditLimit,
-      currentBalance: currentBalance ?? this.currentBalance,
-      primaryMoMoNumber: primaryMoMoNumber ?? this.primaryMoMoNumber,
-      slug: slug ?? this.slug,
-      description: description ?? this.description,
-      logoUrl: logoUrl ?? this.logoUrl,
+      updatedAt: updatedAt ?? this.updatedAt,
       isDirty: isDirty ?? this.isDirty,
       lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
       rowid: rowid ?? this.rowid,
@@ -3402,17 +3332,8 @@ class BusinessTableCompanion extends UpdateCompanion<BusinessEntry> {
     if (legalName.present) {
       map['legal_name'] = Variable<String>(legalName.value);
     }
-    if (tin.present) {
-      map['tin'] = Variable<String>(tin.value);
-    }
-    if (registrationNo.present) {
-      map['registration_no'] = Variable<String>(registrationNo.value);
-    }
-    if (tier.present) {
-      map['tier'] = Variable<String>(tier.value);
-    }
-    if (status.present) {
-      map['status'] = Variable<String>(status.value);
+    if (phoneNumber.present) {
+      map['phone_number'] = Variable<String>(phoneNumber.value);
     }
     if (latitude.present) {
       map['latitude'] = Variable<double>(latitude.value);
@@ -3423,26 +3344,14 @@ class BusinessTableCompanion extends UpdateCompanion<BusinessEntry> {
     if (region.present) {
       map['region'] = Variable<String>(region.value);
     }
+    if (city.present) {
+      map['city'] = Variable<String>(city.value);
+    }
     if (physicalAddress.present) {
       map['physical_address'] = Variable<String>(physicalAddress.value);
     }
-    if (creditLimit.present) {
-      map['credit_limit'] = Variable<double>(creditLimit.value);
-    }
-    if (currentBalance.present) {
-      map['current_balance'] = Variable<double>(currentBalance.value);
-    }
-    if (primaryMoMoNumber.present) {
-      map['primary_mo_mo_number'] = Variable<String>(primaryMoMoNumber.value);
-    }
-    if (slug.present) {
-      map['slug'] = Variable<String>(slug.value);
-    }
-    if (description.present) {
-      map['description'] = Variable<String>(description.value);
-    }
-    if (logoUrl.present) {
-      map['logo_url'] = Variable<String>(logoUrl.value);
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
     if (isDirty.present) {
       map['is_dirty'] = Variable<bool>(isDirty.value);
@@ -3461,20 +3370,13 @@ class BusinessTableCompanion extends UpdateCompanion<BusinessEntry> {
     return (StringBuffer('BusinessTableCompanion(')
           ..write('id: $id, ')
           ..write('legalName: $legalName, ')
-          ..write('tin: $tin, ')
-          ..write('registrationNo: $registrationNo, ')
-          ..write('tier: $tier, ')
-          ..write('status: $status, ')
+          ..write('phoneNumber: $phoneNumber, ')
           ..write('latitude: $latitude, ')
           ..write('longitude: $longitude, ')
           ..write('region: $region, ')
+          ..write('city: $city, ')
           ..write('physicalAddress: $physicalAddress, ')
-          ..write('creditLimit: $creditLimit, ')
-          ..write('currentBalance: $currentBalance, ')
-          ..write('primaryMoMoNumber: $primaryMoMoNumber, ')
-          ..write('slug: $slug, ')
-          ..write('description: $description, ')
-          ..write('logoUrl: $logoUrl, ')
+          ..write('updatedAt: $updatedAt, ')
           ..write('isDirty: $isDirty, ')
           ..write('lastSyncedAt: $lastSyncedAt, ')
           ..write('rowid: $rowid')
@@ -3509,36 +3411,35 @@ class $UsersTableTable extends UsersTable
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _phoneNumberMeta = const VerificationMeta(
-    'phoneNumber',
-  );
+  static const VerificationMeta _emailMeta = const VerificationMeta('email');
   @override
-  late final GeneratedColumn<String> phoneNumber = GeneratedColumn<String>(
-    'phone_number',
+  late final GeneratedColumn<String> email = GeneratedColumn<String>(
+    'email',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _roleMeta = const VerificationMeta('role');
+  @override
+  late final GeneratedColumn<String> role = GeneratedColumn<String>(
+    'role',
     aliasedName,
     false,
     type: DriftSqlType.string,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('customer'),
   );
-  static const VerificationMeta _addressMeta = const VerificationMeta(
-    'address',
+  static const VerificationMeta _profilePicUrlMeta = const VerificationMeta(
+    'profilePicUrl',
   );
   @override
-  late final GeneratedColumn<String> address = GeneratedColumn<String>(
-    'address',
+  late final GeneratedColumn<String> profilePicUrl = GeneratedColumn<String>(
+    'profile_pic_url',
     aliasedName,
-    false,
+    true,
     type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _cityMeta = const VerificationMeta('city');
-  @override
-  late final GeneratedColumn<String> city = GeneratedColumn<String>(
-    'city',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _updatedAtMeta = const VerificationMeta(
     'updatedAt',
@@ -3556,9 +3457,9 @@ class $UsersTableTable extends UsersTable
   List<GeneratedColumn> get $columns => [
     id,
     fullName,
-    phoneNumber,
-    address,
-    city,
+    email,
+    role,
+    profilePicUrl,
     updatedAt,
   ];
   @override
@@ -3586,32 +3487,26 @@ class $UsersTableTable extends UsersTable
     } else if (isInserting) {
       context.missing(_fullNameMeta);
     }
-    if (data.containsKey('phone_number')) {
+    if (data.containsKey('email')) {
       context.handle(
-        _phoneNumberMeta,
-        phoneNumber.isAcceptableOrUnknown(
-          data['phone_number']!,
-          _phoneNumberMeta,
+        _emailMeta,
+        email.isAcceptableOrUnknown(data['email']!, _emailMeta),
+      );
+    }
+    if (data.containsKey('role')) {
+      context.handle(
+        _roleMeta,
+        role.isAcceptableOrUnknown(data['role']!, _roleMeta),
+      );
+    }
+    if (data.containsKey('profile_pic_url')) {
+      context.handle(
+        _profilePicUrlMeta,
+        profilePicUrl.isAcceptableOrUnknown(
+          data['profile_pic_url']!,
+          _profilePicUrlMeta,
         ),
       );
-    } else if (isInserting) {
-      context.missing(_phoneNumberMeta);
-    }
-    if (data.containsKey('address')) {
-      context.handle(
-        _addressMeta,
-        address.isAcceptableOrUnknown(data['address']!, _addressMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_addressMeta);
-    }
-    if (data.containsKey('city')) {
-      context.handle(
-        _cityMeta,
-        city.isAcceptableOrUnknown(data['city']!, _cityMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_cityMeta);
     }
     if (data.containsKey('updated_at')) {
       context.handle(
@@ -3636,18 +3531,18 @@ class $UsersTableTable extends UsersTable
         DriftSqlType.string,
         data['${effectivePrefix}full_name'],
       )!,
-      phoneNumber: attachedDatabase.typeMapping.read(
+      email: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}phone_number'],
-      )!,
-      address: attachedDatabase.typeMapping.read(
+        data['${effectivePrefix}email'],
+      ),
+      role: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}address'],
+        data['${effectivePrefix}role'],
       )!,
-      city: attachedDatabase.typeMapping.read(
+      profilePicUrl: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}city'],
-      )!,
+        data['${effectivePrefix}profile_pic_url'],
+      ),
       updatedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
@@ -3664,16 +3559,16 @@ class $UsersTableTable extends UsersTable
 class UserEntry extends DataClass implements Insertable<UserEntry> {
   final String id;
   final String fullName;
-  final String phoneNumber;
-  final String address;
-  final String city;
+  final String? email;
+  final String role;
+  final String? profilePicUrl;
   final DateTime updatedAt;
   const UserEntry({
     required this.id,
     required this.fullName,
-    required this.phoneNumber,
-    required this.address,
-    required this.city,
+    this.email,
+    required this.role,
+    this.profilePicUrl,
     required this.updatedAt,
   });
   @override
@@ -3681,9 +3576,13 @@ class UserEntry extends DataClass implements Insertable<UserEntry> {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
     map['full_name'] = Variable<String>(fullName);
-    map['phone_number'] = Variable<String>(phoneNumber);
-    map['address'] = Variable<String>(address);
-    map['city'] = Variable<String>(city);
+    if (!nullToAbsent || email != null) {
+      map['email'] = Variable<String>(email);
+    }
+    map['role'] = Variable<String>(role);
+    if (!nullToAbsent || profilePicUrl != null) {
+      map['profile_pic_url'] = Variable<String>(profilePicUrl);
+    }
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
   }
@@ -3692,9 +3591,13 @@ class UserEntry extends DataClass implements Insertable<UserEntry> {
     return UsersTableCompanion(
       id: Value(id),
       fullName: Value(fullName),
-      phoneNumber: Value(phoneNumber),
-      address: Value(address),
-      city: Value(city),
+      email: email == null && nullToAbsent
+          ? const Value.absent()
+          : Value(email),
+      role: Value(role),
+      profilePicUrl: profilePicUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(profilePicUrl),
       updatedAt: Value(updatedAt),
     );
   }
@@ -3707,9 +3610,9 @@ class UserEntry extends DataClass implements Insertable<UserEntry> {
     return UserEntry(
       id: serializer.fromJson<String>(json['id']),
       fullName: serializer.fromJson<String>(json['fullName']),
-      phoneNumber: serializer.fromJson<String>(json['phoneNumber']),
-      address: serializer.fromJson<String>(json['address']),
-      city: serializer.fromJson<String>(json['city']),
+      email: serializer.fromJson<String?>(json['email']),
+      role: serializer.fromJson<String>(json['role']),
+      profilePicUrl: serializer.fromJson<String?>(json['profilePicUrl']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
   }
@@ -3719,9 +3622,9 @@ class UserEntry extends DataClass implements Insertable<UserEntry> {
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
       'fullName': serializer.toJson<String>(fullName),
-      'phoneNumber': serializer.toJson<String>(phoneNumber),
-      'address': serializer.toJson<String>(address),
-      'city': serializer.toJson<String>(city),
+      'email': serializer.toJson<String?>(email),
+      'role': serializer.toJson<String>(role),
+      'profilePicUrl': serializer.toJson<String?>(profilePicUrl),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
   }
@@ -3729,27 +3632,29 @@ class UserEntry extends DataClass implements Insertable<UserEntry> {
   UserEntry copyWith({
     String? id,
     String? fullName,
-    String? phoneNumber,
-    String? address,
-    String? city,
+    Value<String?> email = const Value.absent(),
+    String? role,
+    Value<String?> profilePicUrl = const Value.absent(),
     DateTime? updatedAt,
   }) => UserEntry(
     id: id ?? this.id,
     fullName: fullName ?? this.fullName,
-    phoneNumber: phoneNumber ?? this.phoneNumber,
-    address: address ?? this.address,
-    city: city ?? this.city,
+    email: email.present ? email.value : this.email,
+    role: role ?? this.role,
+    profilePicUrl: profilePicUrl.present
+        ? profilePicUrl.value
+        : this.profilePicUrl,
     updatedAt: updatedAt ?? this.updatedAt,
   );
   UserEntry copyWithCompanion(UsersTableCompanion data) {
     return UserEntry(
       id: data.id.present ? data.id.value : this.id,
       fullName: data.fullName.present ? data.fullName.value : this.fullName,
-      phoneNumber: data.phoneNumber.present
-          ? data.phoneNumber.value
-          : this.phoneNumber,
-      address: data.address.present ? data.address.value : this.address,
-      city: data.city.present ? data.city.value : this.city,
+      email: data.email.present ? data.email.value : this.email,
+      role: data.role.present ? data.role.value : this.role,
+      profilePicUrl: data.profilePicUrl.present
+          ? data.profilePicUrl.value
+          : this.profilePicUrl,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
   }
@@ -3759,9 +3664,9 @@ class UserEntry extends DataClass implements Insertable<UserEntry> {
     return (StringBuffer('UserEntry(')
           ..write('id: $id, ')
           ..write('fullName: $fullName, ')
-          ..write('phoneNumber: $phoneNumber, ')
-          ..write('address: $address, ')
-          ..write('city: $city, ')
+          ..write('email: $email, ')
+          ..write('role: $role, ')
+          ..write('profilePicUrl: $profilePicUrl, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
@@ -3769,64 +3674,61 @@ class UserEntry extends DataClass implements Insertable<UserEntry> {
 
   @override
   int get hashCode =>
-      Object.hash(id, fullName, phoneNumber, address, city, updatedAt);
+      Object.hash(id, fullName, email, role, profilePicUrl, updatedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is UserEntry &&
           other.id == this.id &&
           other.fullName == this.fullName &&
-          other.phoneNumber == this.phoneNumber &&
-          other.address == this.address &&
-          other.city == this.city &&
+          other.email == this.email &&
+          other.role == this.role &&
+          other.profilePicUrl == this.profilePicUrl &&
           other.updatedAt == this.updatedAt);
 }
 
 class UsersTableCompanion extends UpdateCompanion<UserEntry> {
   final Value<String> id;
   final Value<String> fullName;
-  final Value<String> phoneNumber;
-  final Value<String> address;
-  final Value<String> city;
+  final Value<String?> email;
+  final Value<String> role;
+  final Value<String?> profilePicUrl;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
   const UsersTableCompanion({
     this.id = const Value.absent(),
     this.fullName = const Value.absent(),
-    this.phoneNumber = const Value.absent(),
-    this.address = const Value.absent(),
-    this.city = const Value.absent(),
+    this.email = const Value.absent(),
+    this.role = const Value.absent(),
+    this.profilePicUrl = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   UsersTableCompanion.insert({
     required String id,
     required String fullName,
-    required String phoneNumber,
-    required String address,
-    required String city,
+    this.email = const Value.absent(),
+    this.role = const Value.absent(),
+    this.profilePicUrl = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
-       fullName = Value(fullName),
-       phoneNumber = Value(phoneNumber),
-       address = Value(address),
-       city = Value(city);
+       fullName = Value(fullName);
   static Insertable<UserEntry> custom({
     Expression<String>? id,
     Expression<String>? fullName,
-    Expression<String>? phoneNumber,
-    Expression<String>? address,
-    Expression<String>? city,
+    Expression<String>? email,
+    Expression<String>? role,
+    Expression<String>? profilePicUrl,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (fullName != null) 'full_name': fullName,
-      if (phoneNumber != null) 'phone_number': phoneNumber,
-      if (address != null) 'address': address,
-      if (city != null) 'city': city,
+      if (email != null) 'email': email,
+      if (role != null) 'role': role,
+      if (profilePicUrl != null) 'profile_pic_url': profilePicUrl,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -3835,18 +3737,18 @@ class UsersTableCompanion extends UpdateCompanion<UserEntry> {
   UsersTableCompanion copyWith({
     Value<String>? id,
     Value<String>? fullName,
-    Value<String>? phoneNumber,
-    Value<String>? address,
-    Value<String>? city,
+    Value<String?>? email,
+    Value<String>? role,
+    Value<String?>? profilePicUrl,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
   }) {
     return UsersTableCompanion(
       id: id ?? this.id,
       fullName: fullName ?? this.fullName,
-      phoneNumber: phoneNumber ?? this.phoneNumber,
-      address: address ?? this.address,
-      city: city ?? this.city,
+      email: email ?? this.email,
+      role: role ?? this.role,
+      profilePicUrl: profilePicUrl ?? this.profilePicUrl,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
     );
@@ -3861,14 +3763,14 @@ class UsersTableCompanion extends UpdateCompanion<UserEntry> {
     if (fullName.present) {
       map['full_name'] = Variable<String>(fullName.value);
     }
-    if (phoneNumber.present) {
-      map['phone_number'] = Variable<String>(phoneNumber.value);
+    if (email.present) {
+      map['email'] = Variable<String>(email.value);
     }
-    if (address.present) {
-      map['address'] = Variable<String>(address.value);
+    if (role.present) {
+      map['role'] = Variable<String>(role.value);
     }
-    if (city.present) {
-      map['city'] = Variable<String>(city.value);
+    if (profilePicUrl.present) {
+      map['profile_pic_url'] = Variable<String>(profilePicUrl.value);
     }
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
@@ -3884,9 +3786,9 @@ class UsersTableCompanion extends UpdateCompanion<UserEntry> {
     return (StringBuffer('UsersTableCompanion(')
           ..write('id: $id, ')
           ..write('fullName: $fullName, ')
-          ..write('phoneNumber: $phoneNumber, ')
-          ..write('address: $address, ')
-          ..write('city: $city, ')
+          ..write('email: $email, ')
+          ..write('role: $role, ')
+          ..write('profilePicUrl: $profilePicUrl, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -5159,6 +5061,28 @@ class $OrdersTableTable extends OrdersTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _productIdMeta = const VerificationMeta(
+    'productId',
+  );
+  @override
+  late final GeneratedColumn<String> productId = GeneratedColumn<String>(
+    'product_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _supplierIdMeta = const VerificationMeta(
+    'supplierId',
+  );
+  @override
+  late final GeneratedColumn<String> supplierId = GeneratedColumn<String>(
+    'supplier_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -5193,6 +5117,8 @@ class $OrdersTableTable extends OrdersTable
     status,
     isDraft,
     pdfId,
+    productId,
+    supplierId,
     createdAt,
     updatedAt,
   ];
@@ -5266,6 +5192,18 @@ class $OrdersTableTable extends OrdersTable
         pdfId.isAcceptableOrUnknown(data['pdf_id']!, _pdfIdMeta),
       );
     }
+    if (data.containsKey('product_id')) {
+      context.handle(
+        _productIdMeta,
+        productId.isAcceptableOrUnknown(data['product_id']!, _productIdMeta),
+      );
+    }
+    if (data.containsKey('supplier_id')) {
+      context.handle(
+        _supplierIdMeta,
+        supplierId.isAcceptableOrUnknown(data['supplier_id']!, _supplierIdMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -5319,6 +5257,14 @@ class $OrdersTableTable extends OrdersTable
         DriftSqlType.string,
         data['${effectivePrefix}pdf_id'],
       ),
+      productId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}product_id'],
+      ),
+      supplierId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}supplier_id'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -5346,6 +5292,8 @@ class WholesaleOrderEntry extends DataClass
   final String status;
   final bool isDraft;
   final String? pdfId;
+  final String? productId;
+  final String? supplierId;
   final DateTime createdAt;
   final DateTime updatedAt;
   const WholesaleOrderEntry({
@@ -5357,6 +5305,8 @@ class WholesaleOrderEntry extends DataClass
     required this.status,
     required this.isDraft,
     this.pdfId,
+    this.productId,
+    this.supplierId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -5372,6 +5322,12 @@ class WholesaleOrderEntry extends DataClass
     map['is_draft'] = Variable<bool>(isDraft);
     if (!nullToAbsent || pdfId != null) {
       map['pdf_id'] = Variable<String>(pdfId);
+    }
+    if (!nullToAbsent || productId != null) {
+      map['product_id'] = Variable<String>(productId);
+    }
+    if (!nullToAbsent || supplierId != null) {
+      map['supplier_id'] = Variable<String>(supplierId);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
@@ -5390,6 +5346,12 @@ class WholesaleOrderEntry extends DataClass
       pdfId: pdfId == null && nullToAbsent
           ? const Value.absent()
           : Value(pdfId),
+      productId: productId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(productId),
+      supplierId: supplierId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(supplierId),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -5409,6 +5371,8 @@ class WholesaleOrderEntry extends DataClass
       status: serializer.fromJson<String>(json['status']),
       isDraft: serializer.fromJson<bool>(json['isDraft']),
       pdfId: serializer.fromJson<String?>(json['pdfId']),
+      productId: serializer.fromJson<String?>(json['productId']),
+      supplierId: serializer.fromJson<String?>(json['supplierId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -5425,6 +5389,8 @@ class WholesaleOrderEntry extends DataClass
       'status': serializer.toJson<String>(status),
       'isDraft': serializer.toJson<bool>(isDraft),
       'pdfId': serializer.toJson<String?>(pdfId),
+      'productId': serializer.toJson<String?>(productId),
+      'supplierId': serializer.toJson<String?>(supplierId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -5439,6 +5405,8 @@ class WholesaleOrderEntry extends DataClass
     String? status,
     bool? isDraft,
     Value<String?> pdfId = const Value.absent(),
+    Value<String?> productId = const Value.absent(),
+    Value<String?> supplierId = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => WholesaleOrderEntry(
@@ -5450,6 +5418,8 @@ class WholesaleOrderEntry extends DataClass
     status: status ?? this.status,
     isDraft: isDraft ?? this.isDraft,
     pdfId: pdfId.present ? pdfId.value : this.pdfId,
+    productId: productId.present ? productId.value : this.productId,
+    supplierId: supplierId.present ? supplierId.value : this.supplierId,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -5467,6 +5437,10 @@ class WholesaleOrderEntry extends DataClass
       status: data.status.present ? data.status.value : this.status,
       isDraft: data.isDraft.present ? data.isDraft.value : this.isDraft,
       pdfId: data.pdfId.present ? data.pdfId.value : this.pdfId,
+      productId: data.productId.present ? data.productId.value : this.productId,
+      supplierId: data.supplierId.present
+          ? data.supplierId.value
+          : this.supplierId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -5483,6 +5457,8 @@ class WholesaleOrderEntry extends DataClass
           ..write('status: $status, ')
           ..write('isDraft: $isDraft, ')
           ..write('pdfId: $pdfId, ')
+          ..write('productId: $productId, ')
+          ..write('supplierId: $supplierId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -5499,6 +5475,8 @@ class WholesaleOrderEntry extends DataClass
     status,
     isDraft,
     pdfId,
+    productId,
+    supplierId,
     createdAt,
     updatedAt,
   );
@@ -5514,6 +5492,8 @@ class WholesaleOrderEntry extends DataClass
           other.status == this.status &&
           other.isDraft == this.isDraft &&
           other.pdfId == this.pdfId &&
+          other.productId == this.productId &&
+          other.supplierId == this.supplierId &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -5527,6 +5507,8 @@ class OrdersTableCompanion extends UpdateCompanion<WholesaleOrderEntry> {
   final Value<String> status;
   final Value<bool> isDraft;
   final Value<String?> pdfId;
+  final Value<String?> productId;
+  final Value<String?> supplierId;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -5539,6 +5521,8 @@ class OrdersTableCompanion extends UpdateCompanion<WholesaleOrderEntry> {
     this.status = const Value.absent(),
     this.isDraft = const Value.absent(),
     this.pdfId = const Value.absent(),
+    this.productId = const Value.absent(),
+    this.supplierId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -5552,6 +5536,8 @@ class OrdersTableCompanion extends UpdateCompanion<WholesaleOrderEntry> {
     this.status = const Value.absent(),
     this.isDraft = const Value.absent(),
     this.pdfId = const Value.absent(),
+    this.productId = const Value.absent(),
+    this.supplierId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -5569,6 +5555,8 @@ class OrdersTableCompanion extends UpdateCompanion<WholesaleOrderEntry> {
     Expression<String>? status,
     Expression<bool>? isDraft,
     Expression<String>? pdfId,
+    Expression<String>? productId,
+    Expression<String>? supplierId,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -5582,6 +5570,8 @@ class OrdersTableCompanion extends UpdateCompanion<WholesaleOrderEntry> {
       if (status != null) 'status': status,
       if (isDraft != null) 'is_draft': isDraft,
       if (pdfId != null) 'pdf_id': pdfId,
+      if (productId != null) 'product_id': productId,
+      if (supplierId != null) 'supplier_id': supplierId,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -5597,6 +5587,8 @@ class OrdersTableCompanion extends UpdateCompanion<WholesaleOrderEntry> {
     Value<String>? status,
     Value<bool>? isDraft,
     Value<String?>? pdfId,
+    Value<String?>? productId,
+    Value<String?>? supplierId,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -5610,6 +5602,8 @@ class OrdersTableCompanion extends UpdateCompanion<WholesaleOrderEntry> {
       status: status ?? this.status,
       isDraft: isDraft ?? this.isDraft,
       pdfId: pdfId ?? this.pdfId,
+      productId: productId ?? this.productId,
+      supplierId: supplierId ?? this.supplierId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -5643,6 +5637,12 @@ class OrdersTableCompanion extends UpdateCompanion<WholesaleOrderEntry> {
     if (pdfId.present) {
       map['pdf_id'] = Variable<String>(pdfId.value);
     }
+    if (productId.present) {
+      map['product_id'] = Variable<String>(productId.value);
+    }
+    if (supplierId.present) {
+      map['supplier_id'] = Variable<String>(supplierId.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -5666,6 +5666,8 @@ class OrdersTableCompanion extends UpdateCompanion<WholesaleOrderEntry> {
           ..write('status: $status, ')
           ..write('isDraft: $isDraft, ')
           ..write('pdfId: $pdfId, ')
+          ..write('productId: $productId, ')
+          ..write('supplierId: $supplierId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -6087,16 +6089,21 @@ class $SearchHistoryTableTable extends SearchHistoryTable
   $SearchHistoryTableTable(this.attachedDatabase, [this._alias]);
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
-  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
     'id',
     aliasedName,
     false,
-    hasAutoIncrement: true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'PRIMARY KEY AUTOINCREMENT',
-    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
   );
   static const VerificationMeta _queryMeta = const VerificationMeta('query');
   @override
@@ -6120,7 +6127,7 @@ class $SearchHistoryTableTable extends SearchHistoryTable
     defaultValue: currentDateAndTime,
   );
   @override
-  List<GeneratedColumn> get $columns => [id, query, createdAt];
+  List<GeneratedColumn> get $columns => [id, userId, query, createdAt];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -6135,6 +6142,16 @@ class $SearchHistoryTableTable extends SearchHistoryTable
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
     }
     if (data.containsKey('query')) {
       context.handle(
@@ -6160,8 +6177,12 @@ class $SearchHistoryTableTable extends SearchHistoryTable
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return SearchHistoryEntry(
       id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
+        DriftSqlType.string,
         data['${effectivePrefix}id'],
+      )!,
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
       )!,
       query: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -6182,18 +6203,21 @@ class $SearchHistoryTableTable extends SearchHistoryTable
 
 class SearchHistoryEntry extends DataClass
     implements Insertable<SearchHistoryEntry> {
-  final int id;
+  final String id;
+  final String userId;
   final String query;
   final DateTime createdAt;
   const SearchHistoryEntry({
     required this.id,
+    required this.userId,
     required this.query,
     required this.createdAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
+    map['id'] = Variable<String>(id);
+    map['user_id'] = Variable<String>(userId);
     map['query'] = Variable<String>(query);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
@@ -6202,6 +6226,7 @@ class SearchHistoryEntry extends DataClass
   SearchHistoryTableCompanion toCompanion(bool nullToAbsent) {
     return SearchHistoryTableCompanion(
       id: Value(id),
+      userId: Value(userId),
       query: Value(query),
       createdAt: Value(createdAt),
     );
@@ -6213,7 +6238,8 @@ class SearchHistoryEntry extends DataClass
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return SearchHistoryEntry(
-      id: serializer.fromJson<int>(json['id']),
+      id: serializer.fromJson<String>(json['id']),
+      userId: serializer.fromJson<String>(json['userId']),
       query: serializer.fromJson<String>(json['query']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
@@ -6222,21 +6248,28 @@ class SearchHistoryEntry extends DataClass
   Map<String, dynamic> toJson({ValueSerializer? serializer}) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
+      'id': serializer.toJson<String>(id),
+      'userId': serializer.toJson<String>(userId),
       'query': serializer.toJson<String>(query),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
 
-  SearchHistoryEntry copyWith({int? id, String? query, DateTime? createdAt}) =>
-      SearchHistoryEntry(
-        id: id ?? this.id,
-        query: query ?? this.query,
-        createdAt: createdAt ?? this.createdAt,
-      );
+  SearchHistoryEntry copyWith({
+    String? id,
+    String? userId,
+    String? query,
+    DateTime? createdAt,
+  }) => SearchHistoryEntry(
+    id: id ?? this.id,
+    userId: userId ?? this.userId,
+    query: query ?? this.query,
+    createdAt: createdAt ?? this.createdAt,
+  );
   SearchHistoryEntry copyWithCompanion(SearchHistoryTableCompanion data) {
     return SearchHistoryEntry(
       id: data.id.present ? data.id.value : this.id,
+      userId: data.userId.present ? data.userId.value : this.userId,
       query: data.query.present ? data.query.value : this.query,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
@@ -6246,6 +6279,7 @@ class SearchHistoryEntry extends DataClass
   String toString() {
     return (StringBuffer('SearchHistoryEntry(')
           ..write('id: $id, ')
+          ..write('userId: $userId, ')
           ..write('query: $query, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -6253,51 +6287,68 @@ class SearchHistoryEntry extends DataClass
   }
 
   @override
-  int get hashCode => Object.hash(id, query, createdAt);
+  int get hashCode => Object.hash(id, userId, query, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is SearchHistoryEntry &&
           other.id == this.id &&
+          other.userId == this.userId &&
           other.query == this.query &&
           other.createdAt == this.createdAt);
 }
 
 class SearchHistoryTableCompanion extends UpdateCompanion<SearchHistoryEntry> {
-  final Value<int> id;
+  final Value<String> id;
+  final Value<String> userId;
   final Value<String> query;
   final Value<DateTime> createdAt;
+  final Value<int> rowid;
   const SearchHistoryTableCompanion({
     this.id = const Value.absent(),
+    this.userId = const Value.absent(),
     this.query = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
   });
   SearchHistoryTableCompanion.insert({
-    this.id = const Value.absent(),
+    required String id,
+    required String userId,
     required String query,
     this.createdAt = const Value.absent(),
-  }) : query = Value(query);
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       userId = Value(userId),
+       query = Value(query);
   static Insertable<SearchHistoryEntry> custom({
-    Expression<int>? id,
+    Expression<String>? id,
+    Expression<String>? userId,
     Expression<String>? query,
     Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (userId != null) 'user_id': userId,
       if (query != null) 'query': query,
       if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
     });
   }
 
   SearchHistoryTableCompanion copyWith({
-    Value<int>? id,
+    Value<String>? id,
+    Value<String>? userId,
     Value<String>? query,
     Value<DateTime>? createdAt,
+    Value<int>? rowid,
   }) {
     return SearchHistoryTableCompanion(
       id: id ?? this.id,
+      userId: userId ?? this.userId,
       query: query ?? this.query,
       createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
     );
   }
 
@@ -6305,13 +6356,19 @@ class SearchHistoryTableCompanion extends UpdateCompanion<SearchHistoryEntry> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     if (id.present) {
-      map['id'] = Variable<int>(id.value);
+      map['id'] = Variable<String>(id.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
     }
     if (query.present) {
       map['query'] = Variable<String>(query.value);
     }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
     }
     return map;
   }
@@ -6320,8 +6377,1495 @@ class SearchHistoryTableCompanion extends UpdateCompanion<SearchHistoryEntry> {
   String toString() {
     return (StringBuffer('SearchHistoryTableCompanion(')
           ..write('id: $id, ')
+          ..write('userId: $userId, ')
           ..write('query: $query, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $PromotionsTableTable extends PromotionsTable
+    with TableInfo<$PromotionsTableTable, PromotionEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PromotionsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _subtitleMeta = const VerificationMeta(
+    'subtitle',
+  );
+  @override
+  late final GeneratedColumn<String> subtitle = GeneratedColumn<String>(
+    'subtitle',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _actionTextMeta = const VerificationMeta(
+    'actionText',
+  );
+  @override
+  late final GeneratedColumn<String> actionText = GeneratedColumn<String>(
+    'action_text',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _imageUrlsJsonMeta = const VerificationMeta(
+    'imageUrlsJson',
+  );
+  @override
+  late final GeneratedColumn<String> imageUrlsJson = GeneratedColumn<String>(
+    'image_urls_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _priorityMeta = const VerificationMeta(
+    'priority',
+  );
+  @override
+  late final GeneratedColumn<int> priority = GeneratedColumn<int>(
+    'priority',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _isActiveMeta = const VerificationMeta(
+    'isActive',
+  );
+  @override
+  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
+    'is_active',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_active" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _startsAtMeta = const VerificationMeta(
+    'startsAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> startsAt = GeneratedColumn<DateTime>(
+    'starts_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _expiresAtMeta = const VerificationMeta(
+    'expiresAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> expiresAt = GeneratedColumn<DateTime>(
+    'expires_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    title,
+    subtitle,
+    actionText,
+    imageUrlsJson,
+    priority,
+    isActive,
+    startsAt,
+    expiresAt,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'promotions_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PromotionEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('subtitle')) {
+      context.handle(
+        _subtitleMeta,
+        subtitle.isAcceptableOrUnknown(data['subtitle']!, _subtitleMeta),
+      );
+    }
+    if (data.containsKey('action_text')) {
+      context.handle(
+        _actionTextMeta,
+        actionText.isAcceptableOrUnknown(data['action_text']!, _actionTextMeta),
+      );
+    }
+    if (data.containsKey('image_urls_json')) {
+      context.handle(
+        _imageUrlsJsonMeta,
+        imageUrlsJson.isAcceptableOrUnknown(
+          data['image_urls_json']!,
+          _imageUrlsJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('priority')) {
+      context.handle(
+        _priorityMeta,
+        priority.isAcceptableOrUnknown(data['priority']!, _priorityMeta),
+      );
+    }
+    if (data.containsKey('is_active')) {
+      context.handle(
+        _isActiveMeta,
+        isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta),
+      );
+    }
+    if (data.containsKey('starts_at')) {
+      context.handle(
+        _startsAtMeta,
+        startsAt.isAcceptableOrUnknown(data['starts_at']!, _startsAtMeta),
+      );
+    }
+    if (data.containsKey('expires_at')) {
+      context.handle(
+        _expiresAtMeta,
+        expiresAt.isAcceptableOrUnknown(data['expires_at']!, _expiresAtMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PromotionEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PromotionEntry(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      subtitle: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}subtitle'],
+      ),
+      actionText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}action_text'],
+      ),
+      imageUrlsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}image_urls_json'],
+      )!,
+      priority: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}priority'],
+      )!,
+      isActive: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_active'],
+      )!,
+      startsAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}starts_at'],
+      ),
+      expiresAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}expires_at'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $PromotionsTableTable createAlias(String alias) {
+    return $PromotionsTableTable(attachedDatabase, alias);
+  }
+}
+
+class PromotionEntry extends DataClass implements Insertable<PromotionEntry> {
+  final String id;
+  final String title;
+  final String? subtitle;
+  final String? actionText;
+  final String imageUrlsJson;
+  final int priority;
+  final bool isActive;
+  final DateTime? startsAt;
+  final DateTime? expiresAt;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const PromotionEntry({
+    required this.id,
+    required this.title,
+    this.subtitle,
+    this.actionText,
+    required this.imageUrlsJson,
+    required this.priority,
+    required this.isActive,
+    this.startsAt,
+    this.expiresAt,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['title'] = Variable<String>(title);
+    if (!nullToAbsent || subtitle != null) {
+      map['subtitle'] = Variable<String>(subtitle);
+    }
+    if (!nullToAbsent || actionText != null) {
+      map['action_text'] = Variable<String>(actionText);
+    }
+    map['image_urls_json'] = Variable<String>(imageUrlsJson);
+    map['priority'] = Variable<int>(priority);
+    map['is_active'] = Variable<bool>(isActive);
+    if (!nullToAbsent || startsAt != null) {
+      map['starts_at'] = Variable<DateTime>(startsAt);
+    }
+    if (!nullToAbsent || expiresAt != null) {
+      map['expires_at'] = Variable<DateTime>(expiresAt);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  PromotionsTableCompanion toCompanion(bool nullToAbsent) {
+    return PromotionsTableCompanion(
+      id: Value(id),
+      title: Value(title),
+      subtitle: subtitle == null && nullToAbsent
+          ? const Value.absent()
+          : Value(subtitle),
+      actionText: actionText == null && nullToAbsent
+          ? const Value.absent()
+          : Value(actionText),
+      imageUrlsJson: Value(imageUrlsJson),
+      priority: Value(priority),
+      isActive: Value(isActive),
+      startsAt: startsAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(startsAt),
+      expiresAt: expiresAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(expiresAt),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory PromotionEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PromotionEntry(
+      id: serializer.fromJson<String>(json['id']),
+      title: serializer.fromJson<String>(json['title']),
+      subtitle: serializer.fromJson<String?>(json['subtitle']),
+      actionText: serializer.fromJson<String?>(json['actionText']),
+      imageUrlsJson: serializer.fromJson<String>(json['imageUrlsJson']),
+      priority: serializer.fromJson<int>(json['priority']),
+      isActive: serializer.fromJson<bool>(json['isActive']),
+      startsAt: serializer.fromJson<DateTime?>(json['startsAt']),
+      expiresAt: serializer.fromJson<DateTime?>(json['expiresAt']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'title': serializer.toJson<String>(title),
+      'subtitle': serializer.toJson<String?>(subtitle),
+      'actionText': serializer.toJson<String?>(actionText),
+      'imageUrlsJson': serializer.toJson<String>(imageUrlsJson),
+      'priority': serializer.toJson<int>(priority),
+      'isActive': serializer.toJson<bool>(isActive),
+      'startsAt': serializer.toJson<DateTime?>(startsAt),
+      'expiresAt': serializer.toJson<DateTime?>(expiresAt),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  PromotionEntry copyWith({
+    String? id,
+    String? title,
+    Value<String?> subtitle = const Value.absent(),
+    Value<String?> actionText = const Value.absent(),
+    String? imageUrlsJson,
+    int? priority,
+    bool? isActive,
+    Value<DateTime?> startsAt = const Value.absent(),
+    Value<DateTime?> expiresAt = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => PromotionEntry(
+    id: id ?? this.id,
+    title: title ?? this.title,
+    subtitle: subtitle.present ? subtitle.value : this.subtitle,
+    actionText: actionText.present ? actionText.value : this.actionText,
+    imageUrlsJson: imageUrlsJson ?? this.imageUrlsJson,
+    priority: priority ?? this.priority,
+    isActive: isActive ?? this.isActive,
+    startsAt: startsAt.present ? startsAt.value : this.startsAt,
+    expiresAt: expiresAt.present ? expiresAt.value : this.expiresAt,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  PromotionEntry copyWithCompanion(PromotionsTableCompanion data) {
+    return PromotionEntry(
+      id: data.id.present ? data.id.value : this.id,
+      title: data.title.present ? data.title.value : this.title,
+      subtitle: data.subtitle.present ? data.subtitle.value : this.subtitle,
+      actionText: data.actionText.present
+          ? data.actionText.value
+          : this.actionText,
+      imageUrlsJson: data.imageUrlsJson.present
+          ? data.imageUrlsJson.value
+          : this.imageUrlsJson,
+      priority: data.priority.present ? data.priority.value : this.priority,
+      isActive: data.isActive.present ? data.isActive.value : this.isActive,
+      startsAt: data.startsAt.present ? data.startsAt.value : this.startsAt,
+      expiresAt: data.expiresAt.present ? data.expiresAt.value : this.expiresAt,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PromotionEntry(')
+          ..write('id: $id, ')
+          ..write('title: $title, ')
+          ..write('subtitle: $subtitle, ')
+          ..write('actionText: $actionText, ')
+          ..write('imageUrlsJson: $imageUrlsJson, ')
+          ..write('priority: $priority, ')
+          ..write('isActive: $isActive, ')
+          ..write('startsAt: $startsAt, ')
+          ..write('expiresAt: $expiresAt, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    title,
+    subtitle,
+    actionText,
+    imageUrlsJson,
+    priority,
+    isActive,
+    startsAt,
+    expiresAt,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PromotionEntry &&
+          other.id == this.id &&
+          other.title == this.title &&
+          other.subtitle == this.subtitle &&
+          other.actionText == this.actionText &&
+          other.imageUrlsJson == this.imageUrlsJson &&
+          other.priority == this.priority &&
+          other.isActive == this.isActive &&
+          other.startsAt == this.startsAt &&
+          other.expiresAt == this.expiresAt &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class PromotionsTableCompanion extends UpdateCompanion<PromotionEntry> {
+  final Value<String> id;
+  final Value<String> title;
+  final Value<String?> subtitle;
+  final Value<String?> actionText;
+  final Value<String> imageUrlsJson;
+  final Value<int> priority;
+  final Value<bool> isActive;
+  final Value<DateTime?> startsAt;
+  final Value<DateTime?> expiresAt;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const PromotionsTableCompanion({
+    this.id = const Value.absent(),
+    this.title = const Value.absent(),
+    this.subtitle = const Value.absent(),
+    this.actionText = const Value.absent(),
+    this.imageUrlsJson = const Value.absent(),
+    this.priority = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.startsAt = const Value.absent(),
+    this.expiresAt = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PromotionsTableCompanion.insert({
+    required String id,
+    required String title,
+    this.subtitle = const Value.absent(),
+    this.actionText = const Value.absent(),
+    this.imageUrlsJson = const Value.absent(),
+    this.priority = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.startsAt = const Value.absent(),
+    this.expiresAt = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       title = Value(title);
+  static Insertable<PromotionEntry> custom({
+    Expression<String>? id,
+    Expression<String>? title,
+    Expression<String>? subtitle,
+    Expression<String>? actionText,
+    Expression<String>? imageUrlsJson,
+    Expression<int>? priority,
+    Expression<bool>? isActive,
+    Expression<DateTime>? startsAt,
+    Expression<DateTime>? expiresAt,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (title != null) 'title': title,
+      if (subtitle != null) 'subtitle': subtitle,
+      if (actionText != null) 'action_text': actionText,
+      if (imageUrlsJson != null) 'image_urls_json': imageUrlsJson,
+      if (priority != null) 'priority': priority,
+      if (isActive != null) 'is_active': isActive,
+      if (startsAt != null) 'starts_at': startsAt,
+      if (expiresAt != null) 'expires_at': expiresAt,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PromotionsTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? title,
+    Value<String?>? subtitle,
+    Value<String?>? actionText,
+    Value<String>? imageUrlsJson,
+    Value<int>? priority,
+    Value<bool>? isActive,
+    Value<DateTime?>? startsAt,
+    Value<DateTime?>? expiresAt,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return PromotionsTableCompanion(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      subtitle: subtitle ?? this.subtitle,
+      actionText: actionText ?? this.actionText,
+      imageUrlsJson: imageUrlsJson ?? this.imageUrlsJson,
+      priority: priority ?? this.priority,
+      isActive: isActive ?? this.isActive,
+      startsAt: startsAt ?? this.startsAt,
+      expiresAt: expiresAt ?? this.expiresAt,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (subtitle.present) {
+      map['subtitle'] = Variable<String>(subtitle.value);
+    }
+    if (actionText.present) {
+      map['action_text'] = Variable<String>(actionText.value);
+    }
+    if (imageUrlsJson.present) {
+      map['image_urls_json'] = Variable<String>(imageUrlsJson.value);
+    }
+    if (priority.present) {
+      map['priority'] = Variable<int>(priority.value);
+    }
+    if (isActive.present) {
+      map['is_active'] = Variable<bool>(isActive.value);
+    }
+    if (startsAt.present) {
+      map['starts_at'] = Variable<DateTime>(startsAt.value);
+    }
+    if (expiresAt.present) {
+      map['expires_at'] = Variable<DateTime>(expiresAt.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PromotionsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('title: $title, ')
+          ..write('subtitle: $subtitle, ')
+          ..write('actionText: $actionText, ')
+          ..write('imageUrlsJson: $imageUrlsJson, ')
+          ..write('priority: $priority, ')
+          ..write('isActive: $isActive, ')
+          ..write('startsAt: $startsAt, ')
+          ..write('expiresAt: $expiresAt, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $TradingTermsTableTable extends TradingTermsTable
+    with TableInfo<$TradingTermsTableTable, TradingTermsEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TradingTermsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _contentMeta = const VerificationMeta(
+    'content',
+  );
+  @override
+  late final GeneratedColumn<String> content = GeneratedColumn<String>(
+    'content',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _moqMeta = const VerificationMeta('moq');
+  @override
+  late final GeneratedColumn<String> moq = GeneratedColumn<String>(
+    'moq',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _warrantyMeta = const VerificationMeta(
+    'warranty',
+  );
+  @override
+  late final GeneratedColumn<String> warranty = GeneratedColumn<String>(
+    'warranty',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _paymentTermsMeta = const VerificationMeta(
+    'paymentTerms',
+  );
+  @override
+  late final GeneratedColumn<String> paymentTerms = GeneratedColumn<String>(
+    'payment_terms',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _deliveryTermsMeta = const VerificationMeta(
+    'deliveryTerms',
+  );
+  @override
+  late final GeneratedColumn<String> deliveryTerms = GeneratedColumn<String>(
+    'delivery_terms',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    content,
+    moq,
+    warranty,
+    paymentTerms,
+    deliveryTerms,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'trading_terms_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TradingTermsEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('content')) {
+      context.handle(
+        _contentMeta,
+        content.isAcceptableOrUnknown(data['content']!, _contentMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_contentMeta);
+    }
+    if (data.containsKey('moq')) {
+      context.handle(
+        _moqMeta,
+        moq.isAcceptableOrUnknown(data['moq']!, _moqMeta),
+      );
+    }
+    if (data.containsKey('warranty')) {
+      context.handle(
+        _warrantyMeta,
+        warranty.isAcceptableOrUnknown(data['warranty']!, _warrantyMeta),
+      );
+    }
+    if (data.containsKey('payment_terms')) {
+      context.handle(
+        _paymentTermsMeta,
+        paymentTerms.isAcceptableOrUnknown(
+          data['payment_terms']!,
+          _paymentTermsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('delivery_terms')) {
+      context.handle(
+        _deliveryTermsMeta,
+        deliveryTerms.isAcceptableOrUnknown(
+          data['delivery_terms']!,
+          _deliveryTermsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TradingTermsEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TradingTermsEntry(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      content: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content'],
+      )!,
+      moq: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}moq'],
+      ),
+      warranty: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}warranty'],
+      ),
+      paymentTerms: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payment_terms'],
+      ),
+      deliveryTerms: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}delivery_terms'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $TradingTermsTableTable createAlias(String alias) {
+    return $TradingTermsTableTable(attachedDatabase, alias);
+  }
+}
+
+class TradingTermsEntry extends DataClass
+    implements Insertable<TradingTermsEntry> {
+  final String id;
+  final String content;
+  final String? moq;
+  final String? warranty;
+  final String? paymentTerms;
+  final String? deliveryTerms;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const TradingTermsEntry({
+    required this.id,
+    required this.content,
+    this.moq,
+    this.warranty,
+    this.paymentTerms,
+    this.deliveryTerms,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['content'] = Variable<String>(content);
+    if (!nullToAbsent || moq != null) {
+      map['moq'] = Variable<String>(moq);
+    }
+    if (!nullToAbsent || warranty != null) {
+      map['warranty'] = Variable<String>(warranty);
+    }
+    if (!nullToAbsent || paymentTerms != null) {
+      map['payment_terms'] = Variable<String>(paymentTerms);
+    }
+    if (!nullToAbsent || deliveryTerms != null) {
+      map['delivery_terms'] = Variable<String>(deliveryTerms);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  TradingTermsTableCompanion toCompanion(bool nullToAbsent) {
+    return TradingTermsTableCompanion(
+      id: Value(id),
+      content: Value(content),
+      moq: moq == null && nullToAbsent ? const Value.absent() : Value(moq),
+      warranty: warranty == null && nullToAbsent
+          ? const Value.absent()
+          : Value(warranty),
+      paymentTerms: paymentTerms == null && nullToAbsent
+          ? const Value.absent()
+          : Value(paymentTerms),
+      deliveryTerms: deliveryTerms == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deliveryTerms),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory TradingTermsEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TradingTermsEntry(
+      id: serializer.fromJson<String>(json['id']),
+      content: serializer.fromJson<String>(json['content']),
+      moq: serializer.fromJson<String?>(json['moq']),
+      warranty: serializer.fromJson<String?>(json['warranty']),
+      paymentTerms: serializer.fromJson<String?>(json['paymentTerms']),
+      deliveryTerms: serializer.fromJson<String?>(json['deliveryTerms']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'content': serializer.toJson<String>(content),
+      'moq': serializer.toJson<String?>(moq),
+      'warranty': serializer.toJson<String?>(warranty),
+      'paymentTerms': serializer.toJson<String?>(paymentTerms),
+      'deliveryTerms': serializer.toJson<String?>(deliveryTerms),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  TradingTermsEntry copyWith({
+    String? id,
+    String? content,
+    Value<String?> moq = const Value.absent(),
+    Value<String?> warranty = const Value.absent(),
+    Value<String?> paymentTerms = const Value.absent(),
+    Value<String?> deliveryTerms = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => TradingTermsEntry(
+    id: id ?? this.id,
+    content: content ?? this.content,
+    moq: moq.present ? moq.value : this.moq,
+    warranty: warranty.present ? warranty.value : this.warranty,
+    paymentTerms: paymentTerms.present ? paymentTerms.value : this.paymentTerms,
+    deliveryTerms: deliveryTerms.present
+        ? deliveryTerms.value
+        : this.deliveryTerms,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  TradingTermsEntry copyWithCompanion(TradingTermsTableCompanion data) {
+    return TradingTermsEntry(
+      id: data.id.present ? data.id.value : this.id,
+      content: data.content.present ? data.content.value : this.content,
+      moq: data.moq.present ? data.moq.value : this.moq,
+      warranty: data.warranty.present ? data.warranty.value : this.warranty,
+      paymentTerms: data.paymentTerms.present
+          ? data.paymentTerms.value
+          : this.paymentTerms,
+      deliveryTerms: data.deliveryTerms.present
+          ? data.deliveryTerms.value
+          : this.deliveryTerms,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TradingTermsEntry(')
+          ..write('id: $id, ')
+          ..write('content: $content, ')
+          ..write('moq: $moq, ')
+          ..write('warranty: $warranty, ')
+          ..write('paymentTerms: $paymentTerms, ')
+          ..write('deliveryTerms: $deliveryTerms, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    content,
+    moq,
+    warranty,
+    paymentTerms,
+    deliveryTerms,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TradingTermsEntry &&
+          other.id == this.id &&
+          other.content == this.content &&
+          other.moq == this.moq &&
+          other.warranty == this.warranty &&
+          other.paymentTerms == this.paymentTerms &&
+          other.deliveryTerms == this.deliveryTerms &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class TradingTermsTableCompanion extends UpdateCompanion<TradingTermsEntry> {
+  final Value<String> id;
+  final Value<String> content;
+  final Value<String?> moq;
+  final Value<String?> warranty;
+  final Value<String?> paymentTerms;
+  final Value<String?> deliveryTerms;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const TradingTermsTableCompanion({
+    this.id = const Value.absent(),
+    this.content = const Value.absent(),
+    this.moq = const Value.absent(),
+    this.warranty = const Value.absent(),
+    this.paymentTerms = const Value.absent(),
+    this.deliveryTerms = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  TradingTermsTableCompanion.insert({
+    required String id,
+    required String content,
+    this.moq = const Value.absent(),
+    this.warranty = const Value.absent(),
+    this.paymentTerms = const Value.absent(),
+    this.deliveryTerms = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       content = Value(content);
+  static Insertable<TradingTermsEntry> custom({
+    Expression<String>? id,
+    Expression<String>? content,
+    Expression<String>? moq,
+    Expression<String>? warranty,
+    Expression<String>? paymentTerms,
+    Expression<String>? deliveryTerms,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (content != null) 'content': content,
+      if (moq != null) 'moq': moq,
+      if (warranty != null) 'warranty': warranty,
+      if (paymentTerms != null) 'payment_terms': paymentTerms,
+      if (deliveryTerms != null) 'delivery_terms': deliveryTerms,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  TradingTermsTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? content,
+    Value<String?>? moq,
+    Value<String?>? warranty,
+    Value<String?>? paymentTerms,
+    Value<String?>? deliveryTerms,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return TradingTermsTableCompanion(
+      id: id ?? this.id,
+      content: content ?? this.content,
+      moq: moq ?? this.moq,
+      warranty: warranty ?? this.warranty,
+      paymentTerms: paymentTerms ?? this.paymentTerms,
+      deliveryTerms: deliveryTerms ?? this.deliveryTerms,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (content.present) {
+      map['content'] = Variable<String>(content.value);
+    }
+    if (moq.present) {
+      map['moq'] = Variable<String>(moq.value);
+    }
+    if (warranty.present) {
+      map['warranty'] = Variable<String>(warranty.value);
+    }
+    if (paymentTerms.present) {
+      map['payment_terms'] = Variable<String>(paymentTerms.value);
+    }
+    if (deliveryTerms.present) {
+      map['delivery_terms'] = Variable<String>(deliveryTerms.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TradingTermsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('content: $content, ')
+          ..write('moq: $moq, ')
+          ..write('warranty: $warranty, ')
+          ..write('paymentTerms: $paymentTerms, ')
+          ..write('deliveryTerms: $deliveryTerms, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $LegalTermsTableTable extends LegalTermsTable
+    with TableInfo<$LegalTermsTableTable, LegalTermEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LegalTermsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _contentMeta = const VerificationMeta(
+    'content',
+  );
+  @override
+  late final GeneratedColumn<String> content = GeneratedColumn<String>(
+    'content',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, title, content, updatedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'legal_terms_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LegalTermEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('content')) {
+      context.handle(
+        _contentMeta,
+        content.isAcceptableOrUnknown(data['content']!, _contentMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_contentMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LegalTermEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LegalTermEntry(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      content: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $LegalTermsTableTable createAlias(String alias) {
+    return $LegalTermsTableTable(attachedDatabase, alias);
+  }
+}
+
+class LegalTermEntry extends DataClass implements Insertable<LegalTermEntry> {
+  final String id;
+  final String title;
+  final String content;
+  final DateTime updatedAt;
+  const LegalTermEntry({
+    required this.id,
+    required this.title,
+    required this.content,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['title'] = Variable<String>(title);
+    map['content'] = Variable<String>(content);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  LegalTermsTableCompanion toCompanion(bool nullToAbsent) {
+    return LegalTermsTableCompanion(
+      id: Value(id),
+      title: Value(title),
+      content: Value(content),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory LegalTermEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LegalTermEntry(
+      id: serializer.fromJson<String>(json['id']),
+      title: serializer.fromJson<String>(json['title']),
+      content: serializer.fromJson<String>(json['content']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'title': serializer.toJson<String>(title),
+      'content': serializer.toJson<String>(content),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  LegalTermEntry copyWith({
+    String? id,
+    String? title,
+    String? content,
+    DateTime? updatedAt,
+  }) => LegalTermEntry(
+    id: id ?? this.id,
+    title: title ?? this.title,
+    content: content ?? this.content,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  LegalTermEntry copyWithCompanion(LegalTermsTableCompanion data) {
+    return LegalTermEntry(
+      id: data.id.present ? data.id.value : this.id,
+      title: data.title.present ? data.title.value : this.title,
+      content: data.content.present ? data.content.value : this.content,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LegalTermEntry(')
+          ..write('id: $id, ')
+          ..write('title: $title, ')
+          ..write('content: $content, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, title, content, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LegalTermEntry &&
+          other.id == this.id &&
+          other.title == this.title &&
+          other.content == this.content &&
+          other.updatedAt == this.updatedAt);
+}
+
+class LegalTermsTableCompanion extends UpdateCompanion<LegalTermEntry> {
+  final Value<String> id;
+  final Value<String> title;
+  final Value<String> content;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const LegalTermsTableCompanion({
+    this.id = const Value.absent(),
+    this.title = const Value.absent(),
+    this.content = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LegalTermsTableCompanion.insert({
+    required String id,
+    required String title,
+    required String content,
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       title = Value(title),
+       content = Value(content);
+  static Insertable<LegalTermEntry> custom({
+    Expression<String>? id,
+    Expression<String>? title,
+    Expression<String>? content,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (title != null) 'title': title,
+      if (content != null) 'content': content,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LegalTermsTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? title,
+    Value<String>? content,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return LegalTermsTableCompanion(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      content: content ?? this.content,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (content.present) {
+      map['content'] = Variable<String>(content.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LegalTermsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('title: $title, ')
+          ..write('content: $content, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
           ..write(')'))
         .toString();
   }
@@ -6347,6 +7891,14 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $GeneratedPdfsTableTable(this);
   late final $SearchHistoryTableTable searchHistoryTable =
       $SearchHistoryTableTable(this);
+  late final $PromotionsTableTable promotionsTable = $PromotionsTableTable(
+    this,
+  );
+  late final $TradingTermsTableTable tradingTermsTable =
+      $TradingTermsTableTable(this);
+  late final $LegalTermsTableTable legalTermsTable = $LegalTermsTableTable(
+    this,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -6361,6 +7913,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     ordersTable,
     generatedPdfsTable,
     searchHistoryTable,
+    promotionsTable,
+    tradingTermsTable,
+    legalTermsTable,
   ];
 }
 
@@ -6391,6 +7946,7 @@ typedef $$ProductsTableTableCreateCompanionBuilder =
       required String slug,
       required String imageUrl,
       Value<String?> mediaUrls,
+      Value<double> aspectRatio,
       Value<String?> availableColors,
       Value<String?> availableSizes,
       Value<String?> availableMaterials,
@@ -6427,6 +7983,7 @@ typedef $$ProductsTableTableUpdateCompanionBuilder =
       Value<String> slug,
       Value<String> imageUrl,
       Value<String?> mediaUrls,
+      Value<double> aspectRatio,
       Value<String?> availableColors,
       Value<String?> availableSizes,
       Value<String?> availableMaterials,
@@ -6568,6 +8125,11 @@ class $$ProductsTableTableFilterComposer
 
   ColumnFilters<String> get mediaUrls => $composableBuilder(
     column: $table.mediaUrls,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get aspectRatio => $composableBuilder(
+    column: $table.aspectRatio,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6741,6 +8303,11 @@ class $$ProductsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get aspectRatio => $composableBuilder(
+    column: $table.aspectRatio,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get availableColors => $composableBuilder(
     column: $table.availableColors,
     builder: (column) => ColumnOrderings(column),
@@ -6883,6 +8450,11 @@ class $$ProductsTableTableAnnotationComposer
   GeneratedColumn<String> get mediaUrls =>
       $composableBuilder(column: $table.mediaUrls, builder: (column) => column);
 
+  GeneratedColumn<double> get aspectRatio => $composableBuilder(
+    column: $table.aspectRatio,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get availableColors => $composableBuilder(
     column: $table.availableColors,
     builder: (column) => column,
@@ -6973,6 +8545,7 @@ class $$ProductsTableTableTableManager
                 Value<String> slug = const Value.absent(),
                 Value<String> imageUrl = const Value.absent(),
                 Value<String?> mediaUrls = const Value.absent(),
+                Value<double> aspectRatio = const Value.absent(),
                 Value<String?> availableColors = const Value.absent(),
                 Value<String?> availableSizes = const Value.absent(),
                 Value<String?> availableMaterials = const Value.absent(),
@@ -7007,6 +8580,7 @@ class $$ProductsTableTableTableManager
                 slug: slug,
                 imageUrl: imageUrl,
                 mediaUrls: mediaUrls,
+                aspectRatio: aspectRatio,
                 availableColors: availableColors,
                 availableSizes: availableSizes,
                 availableMaterials: availableMaterials,
@@ -7043,6 +8617,7 @@ class $$ProductsTableTableTableManager
                 required String slug,
                 required String imageUrl,
                 Value<String?> mediaUrls = const Value.absent(),
+                Value<double> aspectRatio = const Value.absent(),
                 Value<String?> availableColors = const Value.absent(),
                 Value<String?> availableSizes = const Value.absent(),
                 Value<String?> availableMaterials = const Value.absent(),
@@ -7077,6 +8652,7 @@ class $$ProductsTableTableTableManager
                 slug: slug,
                 imageUrl: imageUrl,
                 mediaUrls: mediaUrls,
+                aspectRatio: aspectRatio,
                 availableColors: availableColors,
                 availableSizes: availableSizes,
                 availableMaterials: availableMaterials,
@@ -7117,6 +8693,10 @@ typedef $$CategoriesTableTableCreateCompanionBuilder =
       required String name,
       Value<String?> parentId,
       Value<int> level,
+      Value<String?> imageUrl,
+      Value<int> itemCount,
+      Value<int> priority,
+      Value<int> usageCount,
       Value<bool> isDirty,
       Value<DateTime?> lastSyncedAt,
       Value<int> rowid,
@@ -7127,6 +8707,10 @@ typedef $$CategoriesTableTableUpdateCompanionBuilder =
       Value<String> name,
       Value<String?> parentId,
       Value<int> level,
+      Value<String?> imageUrl,
+      Value<int> itemCount,
+      Value<int> priority,
+      Value<int> usageCount,
       Value<bool> isDirty,
       Value<DateTime?> lastSyncedAt,
       Value<int> rowid,
@@ -7158,6 +8742,26 @@ class $$CategoriesTableTableFilterComposer
 
   ColumnFilters<int> get level => $composableBuilder(
     column: $table.level,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get imageUrl => $composableBuilder(
+    column: $table.imageUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get itemCount => $composableBuilder(
+    column: $table.itemCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get priority => $composableBuilder(
+    column: $table.priority,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get usageCount => $composableBuilder(
+    column: $table.usageCount,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7201,6 +8805,26 @@ class $$CategoriesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get imageUrl => $composableBuilder(
+    column: $table.imageUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get itemCount => $composableBuilder(
+    column: $table.itemCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get priority => $composableBuilder(
+    column: $table.priority,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get usageCount => $composableBuilder(
+    column: $table.usageCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isDirty => $composableBuilder(
     column: $table.isDirty,
     builder: (column) => ColumnOrderings(column),
@@ -7232,6 +8856,20 @@ class $$CategoriesTableTableAnnotationComposer
 
   GeneratedColumn<int> get level =>
       $composableBuilder(column: $table.level, builder: (column) => column);
+
+  GeneratedColumn<String> get imageUrl =>
+      $composableBuilder(column: $table.imageUrl, builder: (column) => column);
+
+  GeneratedColumn<int> get itemCount =>
+      $composableBuilder(column: $table.itemCount, builder: (column) => column);
+
+  GeneratedColumn<int> get priority =>
+      $composableBuilder(column: $table.priority, builder: (column) => column);
+
+  GeneratedColumn<int> get usageCount => $composableBuilder(
+    column: $table.usageCount,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<bool> get isDirty =>
       $composableBuilder(column: $table.isDirty, builder: (column) => column);
@@ -7279,6 +8917,10 @@ class $$CategoriesTableTableTableManager
                 Value<String> name = const Value.absent(),
                 Value<String?> parentId = const Value.absent(),
                 Value<int> level = const Value.absent(),
+                Value<String?> imageUrl = const Value.absent(),
+                Value<int> itemCount = const Value.absent(),
+                Value<int> priority = const Value.absent(),
+                Value<int> usageCount = const Value.absent(),
                 Value<bool> isDirty = const Value.absent(),
                 Value<DateTime?> lastSyncedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -7287,6 +8929,10 @@ class $$CategoriesTableTableTableManager
                 name: name,
                 parentId: parentId,
                 level: level,
+                imageUrl: imageUrl,
+                itemCount: itemCount,
+                priority: priority,
+                usageCount: usageCount,
                 isDirty: isDirty,
                 lastSyncedAt: lastSyncedAt,
                 rowid: rowid,
@@ -7297,6 +8943,10 @@ class $$CategoriesTableTableTableManager
                 required String name,
                 Value<String?> parentId = const Value.absent(),
                 Value<int> level = const Value.absent(),
+                Value<String?> imageUrl = const Value.absent(),
+                Value<int> itemCount = const Value.absent(),
+                Value<int> priority = const Value.absent(),
+                Value<int> usageCount = const Value.absent(),
                 Value<bool> isDirty = const Value.absent(),
                 Value<DateTime?> lastSyncedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -7305,6 +8955,10 @@ class $$CategoriesTableTableTableManager
                 name: name,
                 parentId: parentId,
                 level: level,
+                imageUrl: imageUrl,
+                itemCount: itemCount,
+                priority: priority,
+                usageCount: usageCount,
                 isDirty: isDirty,
                 lastSyncedAt: lastSyncedAt,
                 rowid: rowid,
@@ -7519,20 +9173,13 @@ typedef $$BusinessTableTableCreateCompanionBuilder =
     BusinessTableCompanion Function({
       required String id,
       required String legalName,
-      required String tin,
-      required String registrationNo,
-      required String tier,
-      required String status,
-      required double latitude,
-      required double longitude,
-      required String region,
-      required String physicalAddress,
-      Value<double> creditLimit,
-      Value<double> currentBalance,
-      required String primaryMoMoNumber,
-      required String slug,
-      required String description,
-      Value<String?> logoUrl,
+      Value<String?> phoneNumber,
+      Value<double?> latitude,
+      Value<double?> longitude,
+      Value<String?> region,
+      Value<String?> city,
+      Value<String?> physicalAddress,
+      Value<DateTime?> updatedAt,
       Value<bool> isDirty,
       Value<DateTime?> lastSyncedAt,
       Value<int> rowid,
@@ -7541,20 +9188,13 @@ typedef $$BusinessTableTableUpdateCompanionBuilder =
     BusinessTableCompanion Function({
       Value<String> id,
       Value<String> legalName,
-      Value<String> tin,
-      Value<String> registrationNo,
-      Value<String> tier,
-      Value<String> status,
-      Value<double> latitude,
-      Value<double> longitude,
-      Value<String> region,
-      Value<String> physicalAddress,
-      Value<double> creditLimit,
-      Value<double> currentBalance,
-      Value<String> primaryMoMoNumber,
-      Value<String> slug,
-      Value<String> description,
-      Value<String?> logoUrl,
+      Value<String?> phoneNumber,
+      Value<double?> latitude,
+      Value<double?> longitude,
+      Value<String?> region,
+      Value<String?> city,
+      Value<String?> physicalAddress,
+      Value<DateTime?> updatedAt,
       Value<bool> isDirty,
       Value<DateTime?> lastSyncedAt,
       Value<int> rowid,
@@ -7579,23 +9219,8 @@ class $$BusinessTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get tin => $composableBuilder(
-    column: $table.tin,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get registrationNo => $composableBuilder(
-    column: $table.registrationNo,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get tier => $composableBuilder(
-    column: $table.tier,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get status => $composableBuilder(
-    column: $table.status,
+  ColumnFilters<String> get phoneNumber => $composableBuilder(
+    column: $table.phoneNumber,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7614,38 +9239,18 @@ class $$BusinessTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get city => $composableBuilder(
+    column: $table.city,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get physicalAddress => $composableBuilder(
     column: $table.physicalAddress,
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<double> get creditLimit => $composableBuilder(
-    column: $table.creditLimit,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<double> get currentBalance => $composableBuilder(
-    column: $table.currentBalance,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get primaryMoMoNumber => $composableBuilder(
-    column: $table.primaryMoMoNumber,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get slug => $composableBuilder(
-    column: $table.slug,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get description => $composableBuilder(
-    column: $table.description,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get logoUrl => $composableBuilder(
-    column: $table.logoUrl,
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7679,23 +9284,8 @@ class $$BusinessTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get tin => $composableBuilder(
-    column: $table.tin,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get registrationNo => $composableBuilder(
-    column: $table.registrationNo,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get tier => $composableBuilder(
-    column: $table.tier,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get status => $composableBuilder(
-    column: $table.status,
+  ColumnOrderings<String> get phoneNumber => $composableBuilder(
+    column: $table.phoneNumber,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -7714,38 +9304,18 @@ class $$BusinessTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get city => $composableBuilder(
+    column: $table.city,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get physicalAddress => $composableBuilder(
     column: $table.physicalAddress,
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<double> get creditLimit => $composableBuilder(
-    column: $table.creditLimit,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<double> get currentBalance => $composableBuilder(
-    column: $table.currentBalance,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get primaryMoMoNumber => $composableBuilder(
-    column: $table.primaryMoMoNumber,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get slug => $composableBuilder(
-    column: $table.slug,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get description => $composableBuilder(
-    column: $table.description,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get logoUrl => $composableBuilder(
-    column: $table.logoUrl,
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -7775,19 +9345,10 @@ class $$BusinessTableTableAnnotationComposer
   GeneratedColumn<String> get legalName =>
       $composableBuilder(column: $table.legalName, builder: (column) => column);
 
-  GeneratedColumn<String> get tin =>
-      $composableBuilder(column: $table.tin, builder: (column) => column);
-
-  GeneratedColumn<String> get registrationNo => $composableBuilder(
-    column: $table.registrationNo,
+  GeneratedColumn<String> get phoneNumber => $composableBuilder(
+    column: $table.phoneNumber,
     builder: (column) => column,
   );
-
-  GeneratedColumn<String> get tier =>
-      $composableBuilder(column: $table.tier, builder: (column) => column);
-
-  GeneratedColumn<String> get status =>
-      $composableBuilder(column: $table.status, builder: (column) => column);
 
   GeneratedColumn<double> get latitude =>
       $composableBuilder(column: $table.latitude, builder: (column) => column);
@@ -7798,36 +9359,16 @@ class $$BusinessTableTableAnnotationComposer
   GeneratedColumn<String> get region =>
       $composableBuilder(column: $table.region, builder: (column) => column);
 
+  GeneratedColumn<String> get city =>
+      $composableBuilder(column: $table.city, builder: (column) => column);
+
   GeneratedColumn<String> get physicalAddress => $composableBuilder(
     column: $table.physicalAddress,
     builder: (column) => column,
   );
 
-  GeneratedColumn<double> get creditLimit => $composableBuilder(
-    column: $table.creditLimit,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<double> get currentBalance => $composableBuilder(
-    column: $table.currentBalance,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get primaryMoMoNumber => $composableBuilder(
-    column: $table.primaryMoMoNumber,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get slug =>
-      $composableBuilder(column: $table.slug, builder: (column) => column);
-
-  GeneratedColumn<String> get description => $composableBuilder(
-    column: $table.description,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get logoUrl =>
-      $composableBuilder(column: $table.logoUrl, builder: (column) => column);
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
 
   GeneratedColumn<bool> get isDirty =>
       $composableBuilder(column: $table.isDirty, builder: (column) => column);
@@ -7871,40 +9412,26 @@ class $$BusinessTableTableTableManager
               ({
                 Value<String> id = const Value.absent(),
                 Value<String> legalName = const Value.absent(),
-                Value<String> tin = const Value.absent(),
-                Value<String> registrationNo = const Value.absent(),
-                Value<String> tier = const Value.absent(),
-                Value<String> status = const Value.absent(),
-                Value<double> latitude = const Value.absent(),
-                Value<double> longitude = const Value.absent(),
-                Value<String> region = const Value.absent(),
-                Value<String> physicalAddress = const Value.absent(),
-                Value<double> creditLimit = const Value.absent(),
-                Value<double> currentBalance = const Value.absent(),
-                Value<String> primaryMoMoNumber = const Value.absent(),
-                Value<String> slug = const Value.absent(),
-                Value<String> description = const Value.absent(),
-                Value<String?> logoUrl = const Value.absent(),
+                Value<String?> phoneNumber = const Value.absent(),
+                Value<double?> latitude = const Value.absent(),
+                Value<double?> longitude = const Value.absent(),
+                Value<String?> region = const Value.absent(),
+                Value<String?> city = const Value.absent(),
+                Value<String?> physicalAddress = const Value.absent(),
+                Value<DateTime?> updatedAt = const Value.absent(),
                 Value<bool> isDirty = const Value.absent(),
                 Value<DateTime?> lastSyncedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => BusinessTableCompanion(
                 id: id,
                 legalName: legalName,
-                tin: tin,
-                registrationNo: registrationNo,
-                tier: tier,
-                status: status,
+                phoneNumber: phoneNumber,
                 latitude: latitude,
                 longitude: longitude,
                 region: region,
+                city: city,
                 physicalAddress: physicalAddress,
-                creditLimit: creditLimit,
-                currentBalance: currentBalance,
-                primaryMoMoNumber: primaryMoMoNumber,
-                slug: slug,
-                description: description,
-                logoUrl: logoUrl,
+                updatedAt: updatedAt,
                 isDirty: isDirty,
                 lastSyncedAt: lastSyncedAt,
                 rowid: rowid,
@@ -7913,40 +9440,26 @@ class $$BusinessTableTableTableManager
               ({
                 required String id,
                 required String legalName,
-                required String tin,
-                required String registrationNo,
-                required String tier,
-                required String status,
-                required double latitude,
-                required double longitude,
-                required String region,
-                required String physicalAddress,
-                Value<double> creditLimit = const Value.absent(),
-                Value<double> currentBalance = const Value.absent(),
-                required String primaryMoMoNumber,
-                required String slug,
-                required String description,
-                Value<String?> logoUrl = const Value.absent(),
+                Value<String?> phoneNumber = const Value.absent(),
+                Value<double?> latitude = const Value.absent(),
+                Value<double?> longitude = const Value.absent(),
+                Value<String?> region = const Value.absent(),
+                Value<String?> city = const Value.absent(),
+                Value<String?> physicalAddress = const Value.absent(),
+                Value<DateTime?> updatedAt = const Value.absent(),
                 Value<bool> isDirty = const Value.absent(),
                 Value<DateTime?> lastSyncedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => BusinessTableCompanion.insert(
                 id: id,
                 legalName: legalName,
-                tin: tin,
-                registrationNo: registrationNo,
-                tier: tier,
-                status: status,
+                phoneNumber: phoneNumber,
                 latitude: latitude,
                 longitude: longitude,
                 region: region,
+                city: city,
                 physicalAddress: physicalAddress,
-                creditLimit: creditLimit,
-                currentBalance: currentBalance,
-                primaryMoMoNumber: primaryMoMoNumber,
-                slug: slug,
-                description: description,
-                logoUrl: logoUrl,
+                updatedAt: updatedAt,
                 isDirty: isDirty,
                 lastSyncedAt: lastSyncedAt,
                 rowid: rowid,
@@ -7980,9 +9493,9 @@ typedef $$UsersTableTableCreateCompanionBuilder =
     UsersTableCompanion Function({
       required String id,
       required String fullName,
-      required String phoneNumber,
-      required String address,
-      required String city,
+      Value<String?> email,
+      Value<String> role,
+      Value<String?> profilePicUrl,
       Value<DateTime> updatedAt,
       Value<int> rowid,
     });
@@ -7990,9 +9503,9 @@ typedef $$UsersTableTableUpdateCompanionBuilder =
     UsersTableCompanion Function({
       Value<String> id,
       Value<String> fullName,
-      Value<String> phoneNumber,
-      Value<String> address,
-      Value<String> city,
+      Value<String?> email,
+      Value<String> role,
+      Value<String?> profilePicUrl,
       Value<DateTime> updatedAt,
       Value<int> rowid,
     });
@@ -8016,18 +9529,18 @@ class $$UsersTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get phoneNumber => $composableBuilder(
-    column: $table.phoneNumber,
+  ColumnFilters<String> get email => $composableBuilder(
+    column: $table.email,
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get address => $composableBuilder(
-    column: $table.address,
+  ColumnFilters<String> get role => $composableBuilder(
+    column: $table.role,
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get city => $composableBuilder(
-    column: $table.city,
+  ColumnFilters<String> get profilePicUrl => $composableBuilder(
+    column: $table.profilePicUrl,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8056,18 +9569,18 @@ class $$UsersTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get phoneNumber => $composableBuilder(
-    column: $table.phoneNumber,
+  ColumnOrderings<String> get email => $composableBuilder(
+    column: $table.email,
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get address => $composableBuilder(
-    column: $table.address,
+  ColumnOrderings<String> get role => $composableBuilder(
+    column: $table.role,
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get city => $composableBuilder(
-    column: $table.city,
+  ColumnOrderings<String> get profilePicUrl => $composableBuilder(
+    column: $table.profilePicUrl,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -8092,16 +9605,16 @@ class $$UsersTableTableAnnotationComposer
   GeneratedColumn<String> get fullName =>
       $composableBuilder(column: $table.fullName, builder: (column) => column);
 
-  GeneratedColumn<String> get phoneNumber => $composableBuilder(
-    column: $table.phoneNumber,
+  GeneratedColumn<String> get email =>
+      $composableBuilder(column: $table.email, builder: (column) => column);
+
+  GeneratedColumn<String> get role =>
+      $composableBuilder(column: $table.role, builder: (column) => column);
+
+  GeneratedColumn<String> get profilePicUrl => $composableBuilder(
+    column: $table.profilePicUrl,
     builder: (column) => column,
   );
-
-  GeneratedColumn<String> get address =>
-      $composableBuilder(column: $table.address, builder: (column) => column);
-
-  GeneratedColumn<String> get city =>
-      $composableBuilder(column: $table.city, builder: (column) => column);
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
@@ -8140,17 +9653,17 @@ class $$UsersTableTableTableManager
               ({
                 Value<String> id = const Value.absent(),
                 Value<String> fullName = const Value.absent(),
-                Value<String> phoneNumber = const Value.absent(),
-                Value<String> address = const Value.absent(),
-                Value<String> city = const Value.absent(),
+                Value<String?> email = const Value.absent(),
+                Value<String> role = const Value.absent(),
+                Value<String?> profilePicUrl = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => UsersTableCompanion(
                 id: id,
                 fullName: fullName,
-                phoneNumber: phoneNumber,
-                address: address,
-                city: city,
+                email: email,
+                role: role,
+                profilePicUrl: profilePicUrl,
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),
@@ -8158,17 +9671,17 @@ class $$UsersTableTableTableManager
               ({
                 required String id,
                 required String fullName,
-                required String phoneNumber,
-                required String address,
-                required String city,
+                Value<String?> email = const Value.absent(),
+                Value<String> role = const Value.absent(),
+                Value<String?> profilePicUrl = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => UsersTableCompanion.insert(
                 id: id,
                 fullName: fullName,
-                phoneNumber: phoneNumber,
-                address: address,
-                city: city,
+                email: email,
+                role: role,
+                profilePicUrl: profilePicUrl,
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),
@@ -8721,6 +10234,8 @@ typedef $$OrdersTableTableCreateCompanionBuilder =
       Value<String> status,
       Value<bool> isDraft,
       Value<String?> pdfId,
+      Value<String?> productId,
+      Value<String?> supplierId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -8735,6 +10250,8 @@ typedef $$OrdersTableTableUpdateCompanionBuilder =
       Value<String> status,
       Value<bool> isDraft,
       Value<String?> pdfId,
+      Value<String?> productId,
+      Value<String?> supplierId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -8786,6 +10303,16 @@ class $$OrdersTableTableFilterComposer
 
   ColumnFilters<String> get pdfId => $composableBuilder(
     column: $table.pdfId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get productId => $composableBuilder(
+    column: $table.productId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get supplierId => $composableBuilder(
+    column: $table.supplierId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8849,6 +10376,16 @@ class $$OrdersTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get productId => $composableBuilder(
+    column: $table.productId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get supplierId => $composableBuilder(
+    column: $table.supplierId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -8896,6 +10433,14 @@ class $$OrdersTableTableAnnotationComposer
 
   GeneratedColumn<String> get pdfId =>
       $composableBuilder(column: $table.pdfId, builder: (column) => column);
+
+  GeneratedColumn<String> get productId =>
+      $composableBuilder(column: $table.productId, builder: (column) => column);
+
+  GeneratedColumn<String> get supplierId => $composableBuilder(
+    column: $table.supplierId,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -8947,6 +10492,8 @@ class $$OrdersTableTableTableManager
                 Value<String> status = const Value.absent(),
                 Value<bool> isDraft = const Value.absent(),
                 Value<String?> pdfId = const Value.absent(),
+                Value<String?> productId = const Value.absent(),
+                Value<String?> supplierId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -8959,6 +10506,8 @@ class $$OrdersTableTableTableManager
                 status: status,
                 isDraft: isDraft,
                 pdfId: pdfId,
+                productId: productId,
+                supplierId: supplierId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -8973,6 +10522,8 @@ class $$OrdersTableTableTableManager
                 Value<String> status = const Value.absent(),
                 Value<bool> isDraft = const Value.absent(),
                 Value<String?> pdfId = const Value.absent(),
+                Value<String?> productId = const Value.absent(),
+                Value<String?> supplierId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -8985,6 +10536,8 @@ class $$OrdersTableTableTableManager
                 status: status,
                 isDraft: isDraft,
                 pdfId: pdfId,
+                productId: productId,
+                supplierId: supplierId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -9248,15 +10801,19 @@ typedef $$GeneratedPdfsTableTableProcessedTableManager =
     >;
 typedef $$SearchHistoryTableTableCreateCompanionBuilder =
     SearchHistoryTableCompanion Function({
-      Value<int> id,
+      required String id,
+      required String userId,
       required String query,
       Value<DateTime> createdAt,
+      Value<int> rowid,
     });
 typedef $$SearchHistoryTableTableUpdateCompanionBuilder =
     SearchHistoryTableCompanion Function({
-      Value<int> id,
+      Value<String> id,
+      Value<String> userId,
       Value<String> query,
       Value<DateTime> createdAt,
+      Value<int> rowid,
     });
 
 class $$SearchHistoryTableTableFilterComposer
@@ -9268,8 +10825,13 @@ class $$SearchHistoryTableTableFilterComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<int> get id => $composableBuilder(
+  ColumnFilters<String> get id => $composableBuilder(
     column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -9293,8 +10855,13 @@ class $$SearchHistoryTableTableOrderingComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<int> get id => $composableBuilder(
+  ColumnOrderings<String> get id => $composableBuilder(
     column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -9318,8 +10885,11 @@ class $$SearchHistoryTableTableAnnotationComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<int> get id =>
+  GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
 
   GeneratedColumn<String> get query =>
       $composableBuilder(column: $table.query, builder: (column) => column);
@@ -9368,23 +10938,31 @@ class $$SearchHistoryTableTableTableManager
               ),
           updateCompanionCallback:
               ({
-                Value<int> id = const Value.absent(),
+                Value<String> id = const Value.absent(),
+                Value<String> userId = const Value.absent(),
                 Value<String> query = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
               }) => SearchHistoryTableCompanion(
                 id: id,
+                userId: userId,
                 query: query,
                 createdAt: createdAt,
+                rowid: rowid,
               ),
           createCompanionCallback:
               ({
-                Value<int> id = const Value.absent(),
+                required String id,
+                required String userId,
                 required String query,
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
               }) => SearchHistoryTableCompanion.insert(
                 id: id,
+                userId: userId,
                 query: query,
                 createdAt: createdAt,
+                rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -9415,6 +10993,791 @@ typedef $$SearchHistoryTableTableProcessedTableManager =
       SearchHistoryEntry,
       PrefetchHooks Function()
     >;
+typedef $$PromotionsTableTableCreateCompanionBuilder =
+    PromotionsTableCompanion Function({
+      required String id,
+      required String title,
+      Value<String?> subtitle,
+      Value<String?> actionText,
+      Value<String> imageUrlsJson,
+      Value<int> priority,
+      Value<bool> isActive,
+      Value<DateTime?> startsAt,
+      Value<DateTime?> expiresAt,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$PromotionsTableTableUpdateCompanionBuilder =
+    PromotionsTableCompanion Function({
+      Value<String> id,
+      Value<String> title,
+      Value<String?> subtitle,
+      Value<String?> actionText,
+      Value<String> imageUrlsJson,
+      Value<int> priority,
+      Value<bool> isActive,
+      Value<DateTime?> startsAt,
+      Value<DateTime?> expiresAt,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$PromotionsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $PromotionsTableTable> {
+  $$PromotionsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get subtitle => $composableBuilder(
+    column: $table.subtitle,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get actionText => $composableBuilder(
+    column: $table.actionText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get imageUrlsJson => $composableBuilder(
+    column: $table.imageUrlsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get priority => $composableBuilder(
+    column: $table.priority,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get startsAt => $composableBuilder(
+    column: $table.startsAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get expiresAt => $composableBuilder(
+    column: $table.expiresAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$PromotionsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $PromotionsTableTable> {
+  $$PromotionsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get subtitle => $composableBuilder(
+    column: $table.subtitle,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get actionText => $composableBuilder(
+    column: $table.actionText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get imageUrlsJson => $composableBuilder(
+    column: $table.imageUrlsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get priority => $composableBuilder(
+    column: $table.priority,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get startsAt => $composableBuilder(
+    column: $table.startsAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get expiresAt => $composableBuilder(
+    column: $table.expiresAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PromotionsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PromotionsTableTable> {
+  $$PromotionsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get subtitle =>
+      $composableBuilder(column: $table.subtitle, builder: (column) => column);
+
+  GeneratedColumn<String> get actionText => $composableBuilder(
+    column: $table.actionText,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get imageUrlsJson => $composableBuilder(
+    column: $table.imageUrlsJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get priority =>
+      $composableBuilder(column: $table.priority, builder: (column) => column);
+
+  GeneratedColumn<bool> get isActive =>
+      $composableBuilder(column: $table.isActive, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get startsAt =>
+      $composableBuilder(column: $table.startsAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get expiresAt =>
+      $composableBuilder(column: $table.expiresAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$PromotionsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PromotionsTableTable,
+          PromotionEntry,
+          $$PromotionsTableTableFilterComposer,
+          $$PromotionsTableTableOrderingComposer,
+          $$PromotionsTableTableAnnotationComposer,
+          $$PromotionsTableTableCreateCompanionBuilder,
+          $$PromotionsTableTableUpdateCompanionBuilder,
+          (
+            PromotionEntry,
+            BaseReferences<
+              _$AppDatabase,
+              $PromotionsTableTable,
+              PromotionEntry
+            >,
+          ),
+          PromotionEntry,
+          PrefetchHooks Function()
+        > {
+  $$PromotionsTableTableTableManager(
+    _$AppDatabase db,
+    $PromotionsTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PromotionsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PromotionsTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PromotionsTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String?> subtitle = const Value.absent(),
+                Value<String?> actionText = const Value.absent(),
+                Value<String> imageUrlsJson = const Value.absent(),
+                Value<int> priority = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                Value<DateTime?> startsAt = const Value.absent(),
+                Value<DateTime?> expiresAt = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PromotionsTableCompanion(
+                id: id,
+                title: title,
+                subtitle: subtitle,
+                actionText: actionText,
+                imageUrlsJson: imageUrlsJson,
+                priority: priority,
+                isActive: isActive,
+                startsAt: startsAt,
+                expiresAt: expiresAt,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String title,
+                Value<String?> subtitle = const Value.absent(),
+                Value<String?> actionText = const Value.absent(),
+                Value<String> imageUrlsJson = const Value.absent(),
+                Value<int> priority = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                Value<DateTime?> startsAt = const Value.absent(),
+                Value<DateTime?> expiresAt = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PromotionsTableCompanion.insert(
+                id: id,
+                title: title,
+                subtitle: subtitle,
+                actionText: actionText,
+                imageUrlsJson: imageUrlsJson,
+                priority: priority,
+                isActive: isActive,
+                startsAt: startsAt,
+                expiresAt: expiresAt,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$PromotionsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PromotionsTableTable,
+      PromotionEntry,
+      $$PromotionsTableTableFilterComposer,
+      $$PromotionsTableTableOrderingComposer,
+      $$PromotionsTableTableAnnotationComposer,
+      $$PromotionsTableTableCreateCompanionBuilder,
+      $$PromotionsTableTableUpdateCompanionBuilder,
+      (
+        PromotionEntry,
+        BaseReferences<_$AppDatabase, $PromotionsTableTable, PromotionEntry>,
+      ),
+      PromotionEntry,
+      PrefetchHooks Function()
+    >;
+typedef $$TradingTermsTableTableCreateCompanionBuilder =
+    TradingTermsTableCompanion Function({
+      required String id,
+      required String content,
+      Value<String?> moq,
+      Value<String?> warranty,
+      Value<String?> paymentTerms,
+      Value<String?> deliveryTerms,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$TradingTermsTableTableUpdateCompanionBuilder =
+    TradingTermsTableCompanion Function({
+      Value<String> id,
+      Value<String> content,
+      Value<String?> moq,
+      Value<String?> warranty,
+      Value<String?> paymentTerms,
+      Value<String?> deliveryTerms,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$TradingTermsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $TradingTermsTableTable> {
+  $$TradingTermsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get moq => $composableBuilder(
+    column: $table.moq,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get warranty => $composableBuilder(
+    column: $table.warranty,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get paymentTerms => $composableBuilder(
+    column: $table.paymentTerms,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deliveryTerms => $composableBuilder(
+    column: $table.deliveryTerms,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$TradingTermsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $TradingTermsTableTable> {
+  $$TradingTermsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get moq => $composableBuilder(
+    column: $table.moq,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get warranty => $composableBuilder(
+    column: $table.warranty,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get paymentTerms => $composableBuilder(
+    column: $table.paymentTerms,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deliveryTerms => $composableBuilder(
+    column: $table.deliveryTerms,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$TradingTermsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TradingTermsTableTable> {
+  $$TradingTermsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get content =>
+      $composableBuilder(column: $table.content, builder: (column) => column);
+
+  GeneratedColumn<String> get moq =>
+      $composableBuilder(column: $table.moq, builder: (column) => column);
+
+  GeneratedColumn<String> get warranty =>
+      $composableBuilder(column: $table.warranty, builder: (column) => column);
+
+  GeneratedColumn<String> get paymentTerms => $composableBuilder(
+    column: $table.paymentTerms,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get deliveryTerms => $composableBuilder(
+    column: $table.deliveryTerms,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$TradingTermsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TradingTermsTableTable,
+          TradingTermsEntry,
+          $$TradingTermsTableTableFilterComposer,
+          $$TradingTermsTableTableOrderingComposer,
+          $$TradingTermsTableTableAnnotationComposer,
+          $$TradingTermsTableTableCreateCompanionBuilder,
+          $$TradingTermsTableTableUpdateCompanionBuilder,
+          (
+            TradingTermsEntry,
+            BaseReferences<
+              _$AppDatabase,
+              $TradingTermsTableTable,
+              TradingTermsEntry
+            >,
+          ),
+          TradingTermsEntry,
+          PrefetchHooks Function()
+        > {
+  $$TradingTermsTableTableTableManager(
+    _$AppDatabase db,
+    $TradingTermsTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TradingTermsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TradingTermsTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TradingTermsTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> content = const Value.absent(),
+                Value<String?> moq = const Value.absent(),
+                Value<String?> warranty = const Value.absent(),
+                Value<String?> paymentTerms = const Value.absent(),
+                Value<String?> deliveryTerms = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TradingTermsTableCompanion(
+                id: id,
+                content: content,
+                moq: moq,
+                warranty: warranty,
+                paymentTerms: paymentTerms,
+                deliveryTerms: deliveryTerms,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String content,
+                Value<String?> moq = const Value.absent(),
+                Value<String?> warranty = const Value.absent(),
+                Value<String?> paymentTerms = const Value.absent(),
+                Value<String?> deliveryTerms = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TradingTermsTableCompanion.insert(
+                id: id,
+                content: content,
+                moq: moq,
+                warranty: warranty,
+                paymentTerms: paymentTerms,
+                deliveryTerms: deliveryTerms,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$TradingTermsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TradingTermsTableTable,
+      TradingTermsEntry,
+      $$TradingTermsTableTableFilterComposer,
+      $$TradingTermsTableTableOrderingComposer,
+      $$TradingTermsTableTableAnnotationComposer,
+      $$TradingTermsTableTableCreateCompanionBuilder,
+      $$TradingTermsTableTableUpdateCompanionBuilder,
+      (
+        TradingTermsEntry,
+        BaseReferences<
+          _$AppDatabase,
+          $TradingTermsTableTable,
+          TradingTermsEntry
+        >,
+      ),
+      TradingTermsEntry,
+      PrefetchHooks Function()
+    >;
+typedef $$LegalTermsTableTableCreateCompanionBuilder =
+    LegalTermsTableCompanion Function({
+      required String id,
+      required String title,
+      required String content,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$LegalTermsTableTableUpdateCompanionBuilder =
+    LegalTermsTableCompanion Function({
+      Value<String> id,
+      Value<String> title,
+      Value<String> content,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$LegalTermsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $LegalTermsTableTable> {
+  $$LegalTermsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LegalTermsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $LegalTermsTableTable> {
+  $$LegalTermsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LegalTermsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LegalTermsTableTable> {
+  $$LegalTermsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get content =>
+      $composableBuilder(column: $table.content, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$LegalTermsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LegalTermsTableTable,
+          LegalTermEntry,
+          $$LegalTermsTableTableFilterComposer,
+          $$LegalTermsTableTableOrderingComposer,
+          $$LegalTermsTableTableAnnotationComposer,
+          $$LegalTermsTableTableCreateCompanionBuilder,
+          $$LegalTermsTableTableUpdateCompanionBuilder,
+          (
+            LegalTermEntry,
+            BaseReferences<
+              _$AppDatabase,
+              $LegalTermsTableTable,
+              LegalTermEntry
+            >,
+          ),
+          LegalTermEntry,
+          PrefetchHooks Function()
+        > {
+  $$LegalTermsTableTableTableManager(
+    _$AppDatabase db,
+    $LegalTermsTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LegalTermsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LegalTermsTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LegalTermsTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String> content = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LegalTermsTableCompanion(
+                id: id,
+                title: title,
+                content: content,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String title,
+                required String content,
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LegalTermsTableCompanion.insert(
+                id: id,
+                title: title,
+                content: content,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LegalTermsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LegalTermsTableTable,
+      LegalTermEntry,
+      $$LegalTermsTableTableFilterComposer,
+      $$LegalTermsTableTableOrderingComposer,
+      $$LegalTermsTableTableAnnotationComposer,
+      $$LegalTermsTableTableCreateCompanionBuilder,
+      $$LegalTermsTableTableUpdateCompanionBuilder,
+      (
+        LegalTermEntry,
+        BaseReferences<_$AppDatabase, $LegalTermsTableTable, LegalTermEntry>,
+      ),
+      LegalTermEntry,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -9437,4 +11800,10 @@ class $AppDatabaseManager {
       $$GeneratedPdfsTableTableTableManager(_db, _db.generatedPdfsTable);
   $$SearchHistoryTableTableTableManager get searchHistoryTable =>
       $$SearchHistoryTableTableTableManager(_db, _db.searchHistoryTable);
+  $$PromotionsTableTableTableManager get promotionsTable =>
+      $$PromotionsTableTableTableManager(_db, _db.promotionsTable);
+  $$TradingTermsTableTableTableManager get tradingTermsTable =>
+      $$TradingTermsTableTableTableManager(_db, _db.tradingTermsTable);
+  $$LegalTermsTableTableTableManager get legalTermsTable =>
+      $$LegalTermsTableTableTableManager(_db, _db.legalTermsTable);
 }

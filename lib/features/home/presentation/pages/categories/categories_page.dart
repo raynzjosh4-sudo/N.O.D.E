@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:node_app/features/home/data/category_dummy_data.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:node_app/features/inventory/presentation/providers/category_notifier.dart';
 import 'package:node_app/features/home/presentation/pages/categories/models/category_model.dart';
 import '../product_detail_screen.dart';
 import 'package:node_app/core/utils/responsive_size.dart';
 
-class CategoriesPage extends StatefulWidget {
+class CategoriesPage extends ConsumerStatefulWidget {
   final CategoryItem? initialCategory;
   const CategoriesPage({super.key, this.initialCategory});
 
   @override
-  State<CategoriesPage> createState() => _CategoriesPageState();
+  ConsumerState<CategoriesPage> createState() => _CategoriesPageState();
 }
 
-class _CategoriesPageState extends State<CategoriesPage> {
+class _CategoriesPageState extends ConsumerState<CategoriesPage> {
   late List<CategoryItem> _currentCategories;
   final List<CategoryItem> _navigationStack = [];
 
@@ -24,7 +25,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
       _navigationStack.add(widget.initialCategory!);
       _currentCategories = widget.initialCategory!.subCategories;
     } else {
-      _currentCategories = CategoryDummyData.topSearchedCategories;
+      _currentCategories = [];
     }
   }
 
@@ -67,7 +68,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
       setState(() {
         _navigationStack.removeLast();
         if (_navigationStack.isEmpty) {
-          _currentCategories = CategoryDummyData.topSearchedCategories;
+          _currentCategories = ref.read(categoryNotifierProvider).value ?? [];
         } else {
           _currentCategories = _navigationStack.last.subCategories;
         }
@@ -82,6 +83,29 @@ class _CategoriesPageState extends State<CategoriesPage> {
     final theme = Theme.of(context);
     final onSurface = theme.colorScheme.onSurface;
 
+    if (_navigationStack.isEmpty && widget.initialCategory == null) {
+       final asyncCategories = ref.watch(categoryNotifierProvider);
+       
+       return asyncCategories.when(
+         data: (categories) {
+           _currentCategories = categories;
+           return _buildContent(theme, onSurface);
+         },
+         loading: () => Scaffold(
+           backgroundColor: theme.scaffoldBackgroundColor,
+           body: const Center(child: CircularProgressIndicator()),
+         ),
+         error: (err, stack) => Scaffold(
+           backgroundColor: theme.scaffoldBackgroundColor,
+           body: Center(child: Text('Error loading categories: $err')),
+         ),
+       );
+    }
+    
+    return _buildContent(theme, onSurface);
+  }
+
+  Widget _buildContent(ThemeData theme, Color onSurface) {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
@@ -132,7 +156,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
                             setState(() {
                               _navigationStack.clear();
                               _currentCategories =
-                                  CategoryDummyData.topSearchedCategories;
+                                  ref.read(categoryNotifierProvider).value ?? [];
                             });
                           }),
                           for (int i = 0; i < _navigationStack.length; i++) ...[

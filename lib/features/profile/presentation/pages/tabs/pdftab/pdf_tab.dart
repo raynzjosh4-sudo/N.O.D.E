@@ -5,10 +5,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:node_app/features/profile/domain/entities/pdf_document.dart';
 import 'package:node_app/features/profile/presentation/providers/pdf_providers.dart';
 import 'package:intl/intl.dart';
-import 'package:node_app/core/utils/responsive_size.dart';
-import 'package:node_app/features/showcase/presentation/services/node_toast_manager.dart';
-import 'package:node_app/features/showcase/presentation/widgets/node_toast.dart';
 import '../profile_tab_widgets.dart';
+import 'package:node_app/core/utils/responsive_size.dart';
+import 'package:node_app/core/widgets/node_error_state.dart';
 
 class PdfTab extends ConsumerWidget {
   const PdfTab({super.key});
@@ -16,34 +15,45 @@ class PdfTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final onSurface = theme.colorScheme.onSurface;
-    final primary = theme.primaryColor;
 
     final docsAsync = ref.watch(userPdfsProvider);
 
     return docsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('Error: $e')),
+      error: (e, _) => NodeErrorState(
+        error: e,
+        onRetry: () => ref.refresh(userPdfsProvider),
+      ),
       data: (docs) {
-        if (docs.isEmpty) {
-          return ProfilePlaceholderView(
-            title: 'No PDFs yet',
-            subtitle:
-                'Open an order sheet and tap "Download PDF" to generate one.',
-          );
-        }
-        return ListView.builder(
-          padding: EdgeInsets.symmetric(vertical: 8.h),
-          itemCount: docs.length,
-          itemBuilder: (context, index) {
-            final doc = docs[index];
-            return _PdfDocumentTile(
-              doc: doc,
-              onTap: () {
-                context.push('/pdf-viewer', extra: doc);
-              },
-            );
-          },
+        return RefreshIndicator(
+          onRefresh: () => ref.refresh(userPdfsProvider.future),
+          child: docs.isEmpty
+              ? SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Container(
+                    height: MediaQuery.of(context).size.height * 0.6,
+                    alignment: Alignment.center,
+                    child: ProfilePlaceholderView(
+                      title: 'No PDFs yet',
+                      subtitle:
+                          'Open an order sheet and tap "Download PDF" to generate one.',
+                    ),
+                  ),
+                )
+              : ListView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.symmetric(vertical: 8.h),
+                  itemCount: docs.length,
+                  itemBuilder: (context, index) {
+                    final doc = docs[index];
+                    return _PdfDocumentTile(
+                      doc: doc,
+                      onTap: () {
+                        context.push('/pdf-viewer', extra: doc);
+                      },
+                    );
+                  },
+                ),
         );
       },
     );

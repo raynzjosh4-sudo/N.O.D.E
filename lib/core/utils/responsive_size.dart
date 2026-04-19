@@ -16,9 +16,11 @@ class SizeConfig {
       screenWidth = size.width == 0 ? _designWidth : size.width;
       screenHeight = size.height == 0 ? _designHeight : size.height;
 
-      widthMultiplier = (screenWidth / _designWidth) * userScaleFactor;
+      double rawWidthMultiplier = (screenWidth / _designWidth) * userScaleFactor;
+      // Clamp the width multiplier so fonts and paddings don't become massive on desktop monitors natively
+      widthMultiplier = rawWidthMultiplier > 1.5 ? 1.5 : rawWidthMultiplier;
 
-      // Calculate true height multiplier
+      // Calculate true height multiplier based on actual height
       double rawHeightMultiplier = (screenHeight / _designHeight);
 
       // Clamp height multiplier so it never compresses vertically much more than horizontally
