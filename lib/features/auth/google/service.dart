@@ -22,7 +22,7 @@ class AuthService {
       }
 
       const webClientId =
-          '959127069942-p625bddb7vket40arga1qajjo09o07da.apps.googleusercontent.com';
+          '959127069942-l6ikv8q6umcnee9k7kj0e2s85k70j2es.apps.googleusercontent.com';
 
       if (!_isGoogleInitialized) {
         debugPrint('👉 [Google Auth] Initializing Google SignIn instance...');
@@ -106,7 +106,7 @@ class AuthService {
       }
 
       const webClientId =
-          '959127069942-p625bddb7vket40arga1qajjo09o07da.apps.googleusercontent.com';
+          '959127069942-l6ikv8q6umcnee9k7kj0e2s85k70j2es.apps.googleusercontent.com';
 
       if (!_isGoogleInitialized) {
         try {
