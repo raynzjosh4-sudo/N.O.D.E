@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <!--
     If you are serving your web app in a path other than the root, change the
@@ -14,33 +15,240 @@
     This is a placeholder for base href that will be replaced by the value of
     the `--base-href` argument provided to `flutter build`.
   -->
-  <base href="$FLUTTER_BASE_HREF">
+  <base href="/">
 
-  <meta charset="UTF-8">
-  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <title>N.O.D.E | Wholesale & Distribution Exchange Uganda</title>
+  <meta name="description"
+    content="N.O.D.E is Uganda's premier digital exchange for wholesaling and bulk buying. Connect with distributors and streamline your supply chain in Uganda.">
 
-  <!-- iOS meta tags & icons -->
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="node_app">
-  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <link rel="canonical" href="https://wholesaleuganda.nexassearch.com/">
+  <meta name="geo.region" content="UG" />
+  <meta name="geo.placename" content="Kampala" />
 
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://wholesaleuganda.nexassearch.com/">
+  <meta property="og:title" content="N.O.D.E | Wholesale & Distribution Exchange Uganda">
+  <meta property="og:description"
+    content="N.O.D.E is Uganda's premier digital exchange for wholesaling and bulk buying. Connect with distributors and streamline your supply chain in Uganda.">
+  <meta property="og:image" content="https://wholesaleuganda.nexassearch.com/favicon.png">
 
-  <title>node_app</title>
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://wholesaleuganda.nexassearch.com/">
+  <meta property="twitter:title" content="N.O.D.E | Wholesale & Distribution Exchange Uganda">
+  <meta property="twitter:description"
+    content="N.O.D.E is Uganda's premier digital exchange for wholesaling and bulk buying. Connect with distributors and streamline your supply chain in Uganda.">
+  <meta property="twitter:image" content="https://wholesaleuganda.nexassearch.com/favicon.png">
+  <!-- Favicon & Search Icons -->
+  <link rel="icon" href="https://wholesaleuganda.nexassearch.com/favicon.png" sizes="48x48" type="image/png">
+  <link rel="apple-touch-icon" href="https://wholesaleuganda.nexassearch.com/favicon.png">
   <link rel="manifest" href="manifest.json">
-</head>
-<body>
-  <!--
-    You can customize the "flutter_bootstrap.js" script.
-    This is useful to provide a custom configuration to the Flutter loader
-    or to give the user feedback during the initialization process.
 
-    For more details:
-    * https://docs.flutter.dev/platform-integration/web/initialization
-  -->
+  <!-- 🤖 JSON-LD Schema (Structured Data) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "N.O.D.E - National Order & Distribution Exchange",
+    "url": "https://wholesaleuganda.nexassearch.com/",
+    "logo": "https://wholesaleuganda.nexassearch.com/favicon.png",
+    "description": "Leading wholesale and distribution platform in Uganda connecting traders and bulk buyers.",
+    "address": {
+      "@type": "PostalAddress",
+      "addressCountry": "UG",
+      "addressLocality": "Kampala"
+    },
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "contactType": "customer service",
+      "areaServed": "UG"
+    }
+  }
+  </script>
+
+  <style>
+    body {
+      background-color: #121212;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    #loading-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background-color: #121212;
+      transition: opacity 0.5s ease-in-out;
+      z-index: 9999;
+    }
+
+    .logo-container {
+      width: 100px;
+      height: 100px;
+      margin-bottom: 24px;
+      animation: pulse 2.5s infinite ease-in-out;
+    }
+
+    .app-name {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #ffffff;
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: 4px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      text-align: center;
+    }
+
+    .full-name {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #12bbf0;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      opacity: 0.9;
+      text-align: center;
+      padding: 0 20px;
+    }
+
+    .spinner {
+      margin-top: 48px;
+      width: 32px;
+      height: 32px;
+      border: 3px solid rgba(18, 187, 240, 0.1);
+      border-top: 3px solid #12bbf0;
+      border-radius: 50%;
+      animation: rotate 1s linear infinite;
+    }
+
+    @keyframes rotate {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+
+      50% {
+        transform: scale(1.08);
+        opacity: 0.8;
+      }
+    }
+
+    .fade-out {
+      opacity: 0 !important;
+      pointer-events: none;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- 🔍 SEO Billboard: Visually hidden but readable by search engines -->
+  <div style="position: absolute; left: -10000px; top: auto; width: 1px; height: 1px; overflow: hidden;">
+    <h1>N.O.D.E - National Order & Distribution Exchange Uganda</h1>
+
+    <section>
+      <h2>Premier B2B Wholesale Marketplace in Uganda</h2>
+      <p>N.O.D.E (National Order & Distribution Exchange) is the central hub for <strong>wholesaling in Uganda</strong>.
+        We facilitate seamless trade between manufacturers, importers, and retailers across <strong>Kampala, Entebbe,
+          Jinja, Mbarara, and Gulu</strong>.</p>
+    </section>
+
+    <section>
+      <h2>Buy in Bulk - Best Wholesale Prices in Uganda</h2>
+      <p>Are you looking for <strong>buying in Uganda</strong> at factory prices? N.O.D.E connects you to reliable
+        <strong>Ugandan distributors</strong>. Our platform is designed for the unique needs of the Ugandan market,
+        supporting local traders and international suppliers.
+      </p>
+      <ul>
+        <li><strong>Wholesale Electronics:</strong> Smartphones, laptops, and home appliances in Kampala.</li>
+        <li><strong>FMCG Distribution:</strong> Fast-moving consumer goods for Ugandan supermarkets and shops.</li>
+        <li><strong>Hardware & Construction:</strong> Bulk building materials for projects across Uganda.</li>
+        <li><strong>Agricultural Supplies:</strong> Wholesale fertilizers, tools, and seeds for Ugandan farmers.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Why Use N.O.D.E for Ugandan Trade?</h2>
+      <p>Our <strong>Supply Chain Management</strong> system ensures that distribution in Uganda is efficient and
+        transparent. We are digitizing the <strong>Ugandan wholesale market</strong> to help businesses scale faster.
+      </p>
+      <ul>
+        <li>Direct access to Kampala's biggest wholesalers.</li>
+        <li>Secure ordering and distribution tracking.</li>
+        <li>Verified Ugandan suppliers and distributors.</li>
+        <li>Bulk purchase discounts for retail shop owners.</li>
+      </ul>
+    </section>
+
+    <footer>
+      <p>Keywords: Wholesale Uganda, Bulk Buying Kampala, Uganda Distributors, Supply Chain Uganda, Trade Exchange East
+        Africa, N.O.D.E App Uganda.</p>
+    </footer>
+  </div>
+
+  <div id="loading-container">
+    <div class="logo-container">
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <rect x="5" y="5" width="90" height="90" rx="28" fill="#12bbf0" />
+        <path d="M 50 25 L 78 70 Q 50 55 22 70 Z" fill="none" stroke="#2c2e36" stroke-width="16" stroke-linejoin="round"
+          stroke-linecap="round" />
+      </svg>
+    </div>
+    <div class="app-name">N.O.D.E</div>
+    <div class="full-name">National Order & Distribution Exchange</div>
+    <div class="spinner"></div>
+  </div>
+
   <script src="flutter_bootstrap.js" async></script>
+
+  <script>
+    // 🧹 Auto-hide splash screen when Flutter app is ready
+    window.addEventListener('load', function (ev) {
+      // We wait for the Flutter app to mount and render
+      var loader = document.querySelector('#loading-container');
+
+      // Check for Flutter engine initialization periodically
+      var checkFlutter = setInterval(function () {
+        if (window._flutter && window._flutter.appRunner) {
+          // Flutter is starting to run, fade out the loader
+          loader.classList.add('fade-out');
+          setTimeout(function () {
+            loader.remove();
+          }, 600);
+          clearInterval(checkFlutter);
+        }
+      }, 100);
+
+      // Fail-safe: remove after 10 seconds anyway
+      setTimeout(function () {
+        if (loader) {
+          loader.classList.add('fade-out');
+          setTimeout(function () { loader.remove(); }, 600);
+          clearInterval(checkFlutter);
+        }
+      }, 10000);
+    });
+  </script>
 </body>
+
 </html>

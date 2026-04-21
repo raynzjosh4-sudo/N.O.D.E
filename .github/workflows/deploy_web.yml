@@ -44,7 +44,7 @@ jobs:
         
       - name: Build Web Application
         # Critical: Matches your GitHub repo name so assets load correctly on Pages
-        run: flutter build web --base-href "/N.O.D.E/"
+        run: flutter build web --base-href "/"
 
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v3

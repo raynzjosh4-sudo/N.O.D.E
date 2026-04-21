@@ -1,11 +1,11 @@
 {
-    "name": "node_app",
-    "short_name": "node_app",
+    "name": "N.O.D.E",
+    "short_name": "N.O.D.E",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#121212",
+    "theme_color": "#12bbf0",
+    "description": "National Order & Distribution Exchange",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
