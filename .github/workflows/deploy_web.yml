@@ -29,6 +29,18 @@ jobs:
       - name: Install Dependencies
         run: flutter pub get
         
+      - name: Create .env File
+        run: |
+          echo "R2_ACCESS_KEY_ID=${{ secrets.R2_ACCESS_KEY_ID }}" >> .env
+          echo "R2_SECRET_ACCESS_KEY=${{ secrets.R2_SECRET_ACCESS_KEY }}" >> .env
+          echo "R2_ENDPOINT=${{ secrets.R2_ENDPOINT }}" >> .env
+          echo "R2_REGION=${{ secrets.R2_REGION }}" >> .env
+          echo "R2_PATH_STYLE=${{ secrets.R2_PATH_STYLE }}" >> .env
+          echo "R2_BUCKET_NAME=${{ secrets.R2_BUCKET_NAME }}" >> .env
+          echo "R2_PUBLIC_URL=${{ secrets.R2_PUBLIC_URL }}" >> .env
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
+          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+        
       - name: Build Web Application
         # Critical: Matches your GitHub repo name so assets load correctly on Pages
         run: flutter build web --base-href "/N.O.D.E/"
