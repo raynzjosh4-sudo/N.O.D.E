@@ -4,7 +4,11 @@ import '../../../../core/database/app_database.dart';
 import '../models/category_model.dart';
 
 abstract class ICategoryLocalDataSource {
-  Future<List<CategoryModel>> getCategories({int limit = 100, int offset = 0});
+  Future<List<CategoryModel>> getCategories({
+    String? parentId,
+    int limit = 100,
+    int offset = 0,
+  });
   Stream<List<CategoryModel>> watchCategories();
   Future<void> cacheCategories(List<CategoryModel> categories);
   Future<void> clearCache();
@@ -18,10 +22,20 @@ class CategoryLocalDataSourceImpl implements ICategoryLocalDataSource {
   CategoryLocalDataSourceImpl(this.database);
 
   @override
-  Future<List<CategoryModel>> getCategories({int limit = 100, int offset = 0}) async {
-    final entries = await (database.select(database.categoriesTable)
-          ..limit(limit, offset: offset))
-        .get();
+  Future<List<CategoryModel>> getCategories({
+    String? parentId,
+    int limit = 100,
+    int offset = 0,
+  }) async {
+    final query = database.select(database.categoriesTable);
+    if (parentId != null) {
+      query.where((t) => t.parentId.equals(parentId));
+    } else {
+      query.where((t) => t.parentId.isNull());
+    }
+    query.limit(limit, offset: offset);
+
+    final entries = await query.get();
     return entries.map((entry) => CategoryModel.fromDrift(entry)).toList();
   }
 

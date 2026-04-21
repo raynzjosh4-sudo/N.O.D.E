@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:node_app/core/database/app_database.dart';
 
 class AuthService {
   final supabase = Supabase.instance.client;
@@ -125,6 +126,16 @@ class AuthService {
   Future<void> signOut() async {
     try {
       debugPrint('👉 [Google Auth] Starting sign out...');
+
+      // 0. 🧹 WIPE LOCAL DATA - Absolute privacy first!
+      // This ensures that Account B never sees Account A's cached drafts/records.
+      try {
+        final db = AppDatabase();
+        await db.wipeAllData();
+        debugPrint('✅ [Google Auth] Local database wiped successfully.');
+      } catch (e) {
+        debugPrint('⚠️ [Google Auth] Database wipe failed (might be already closed): $e');
+      }
 
       // 1. Sign out from Supabase (clears local session)
       await supabase.auth.signOut();

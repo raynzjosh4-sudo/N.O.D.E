@@ -40,62 +40,59 @@ class _OrdersTabState extends ConsumerState<OrdersTab> {
     final theme = Theme.of(context);
     final onSurface = theme.colorScheme.onSurface;
 
-    return ordersAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => NodeErrorState(
-        error: err,
-        onRetry: () => ref.refresh(wholesaleOrdersProvider),
-      ),
-      data: (orders) {
-        if (orders.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.receipt_long_outlined,
-                  size: 48.w,
-                  color: onSurface.withOpacity(0.2),
-                ),
-                SizedBox(height: 16.h),
-                Text(
-                  'No orders yet',
-                  style: GoogleFonts.outfit(
-                    fontSize: 16.sp,
-                    color: onSurface.withOpacity(0.4),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
+    final orders = ordersAsync.items;
+
+    if (orders.isEmpty && ordersAsync.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (orders.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.receipt_long_outlined,
+              size: 48.w,
+              color: onSurface.withOpacity(0.2),
             ),
-          );
-        }
+            SizedBox(height: 16.h),
+            Text(
+              'No orders yet',
+              style: GoogleFonts.outfit(
+                fontSize: 16.sp,
+                color: onSurface.withOpacity(0.4),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
-        return ValueListenableBuilder<Set<String>>(
-          valueListenable: widget.selectedIdsNotifier,
-          builder: (context, selectedIds, _) {
-            return ListView.separated(
-              padding: EdgeInsets.zero,
-              itemCount: orders.length,
-              separatorBuilder: (context, _) =>
-                  Divider(height: 1.h, color: onSurface.withOpacity(0.05)),
-              itemBuilder: (context, index) {
-                final order = orders[index];
-                final isSelected = selectedIds.contains(order.id);
+    return ValueListenableBuilder<Set<String>>(
+      valueListenable: widget.selectedIdsNotifier,
+      builder: (context, selectedIds, _) {
+        return ListView.separated(
+          padding: EdgeInsets.zero,
+          itemCount: orders.length,
+          separatorBuilder: (context, _) =>
+              Divider(height: 1.h, color: onSurface.withOpacity(0.05)),
+          itemBuilder: (context, index) {
+            final order = orders[index];
+            final isSelected = selectedIds.contains(order.id);
 
-                return _OrderCard(
-                  order: order,
-                  isSelected: isSelected,
-                  onTap: () {
-                    if (selectedIds.isNotEmpty) {
-                      _toggleSelection(order.id);
-                    } else {
-                      OrderDetailsPage.show(context, order);
-                    }
-                  },
-                  onLongPress: () => _toggleSelection(order.id),
-                );
+            return _OrderCard(
+              order: order,
+              isSelected: isSelected,
+              onTap: () {
+                if (selectedIds.isNotEmpty) {
+                  _toggleSelection(order.id);
+                } else {
+                  OrderDetailsPage.show(context, order);
+                }
               },
+              onLongPress: () => _toggleSelection(order.id),
             );
           },
         );

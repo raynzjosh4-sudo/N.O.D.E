@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:node_app/features/showcase/presentation/services/node_toast_manager.dart';
@@ -82,20 +82,20 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
                   subject: 'Order Sheet: ${widget.doc.title}',
                 );
               } else {
-                final file = File(widget.doc.fileUrl);
-                if (await file.exists()) {
-                  await Share.shareXFiles([
-                    XFile(widget.doc.fileUrl),
-                  ], text: 'Order Sheet: ${widget.doc.title}');
-                } else {
+                if (kIsWeb) {
                   if (context.mounted) {
                     NodeToastManager.show(
                       context,
-                      title: 'File Not Found',
-                      message: 'The PDF file could not be located.',
-                      status: NodeToastStatus.error,
+                      title: 'Download Required',
+                      message:
+                          'Local files cannot be shared directly from the web.',
+                      status: NodeToastStatus.warning,
                     );
                   }
+                } else {
+                  await Share.shareXFiles([
+                    XFile(widget.doc.fileUrl),
+                  ], text: 'Order Sheet: ${widget.doc.title}');
                 }
               }
             },

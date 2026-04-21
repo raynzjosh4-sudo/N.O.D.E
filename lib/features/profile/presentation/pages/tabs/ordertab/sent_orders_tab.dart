@@ -39,73 +39,94 @@ class _SentOrdersTabState extends ConsumerState<SentOrdersTab> {
 
   @override
   Widget build(BuildContext context) {
-    final sentOrdersAsync = ref.watch(sentOrdersProvider);
+    final ordersState = ref.watch(sentOrdersProvider);
     final theme = Theme.of(context);
     final onSurface = theme.colorScheme.onSurface;
+    final orders = ordersState.items;
 
-    return sentOrdersAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => NodeErrorState(
-        error: err,
-        onRetry: () => ref.refresh(sentOrdersProvider),
-      ),
-      data: (orders) {
-        return RefreshIndicator(
-          onRefresh: () => ref.read(sentOrdersProvider.notifier).refresh(),
-          child: orders.isEmpty
-              ? SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  child: Container(
-                    height: MediaQuery.of(context).size.height * 0.6,
-                    alignment: Alignment.center,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.verified_rounded,
-                          size: 48.w,
-                          color: onSurface.withOpacity(0.2),
-                        ),
-                        SizedBox(height: 16.h),
-                        Text(
-                          'No orders submitted yet',
-                          style: GoogleFonts.outfit(
-                            fontSize: 16.sp,
-                            color: onSurface.withOpacity(0.4),
-                            fontWeight: FontWeight.w600,
+    if (orders.isEmpty && ordersState.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return RefreshIndicator(
+      onRefresh: () => ref.read(sentOrdersProvider.notifier).refresh(),
+      child: orders.isEmpty
+          ? SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Container(
+                height: MediaQuery.of(context).size.height * 0.6,
+                alignment: Alignment.center,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.verified_rounded,
+                      size: 48.w,
+                      color: onSurface.withOpacity(0.2),
+                    ),
+                    SizedBox(height: 16.h),
+                    Text(
+                      'No orders submitted yet',
+                      style: GoogleFonts.outfit(
+                        fontSize: 16.sp,
+                        color: onSurface.withOpacity(0.4),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : NotificationListener<ScrollNotification>(
+              onNotification: (scrollInfo) {
+                if (scrollInfo.metrics.pixels >=
+                    scrollInfo.metrics.maxScrollExtent - 200) {
+                  ref.read(sentOrdersProvider.notifier).loadMore();
+                }
+                return false;
+              },
+              child: ListView.separated(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.zero,
+                itemCount: orders.length + (ordersState.isLoading ? 1 : 0),
+                separatorBuilder: (context, _) =>
+                    Divider(height: 1.h, color: onSurface.withOpacity(0.05)),
+                itemBuilder: (context, index) {
+                  if (index == orders.length) {
+                    return Padding(
+                      padding: EdgeInsets.symmetric(vertical: 24.h),
+                      child: Center(
+                        child: SizedBox(
+                          width: 20.w,
+                          height: 20.w,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: theme.primaryColor.withOpacity(0.5),
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                )
-              : ListView.separated(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: EdgeInsets.zero,
-                  itemCount: orders.length,
-                  separatorBuilder: (context, _) =>
-                      Divider(height: 1.h, color: onSurface.withOpacity(0.05)),
-                  itemBuilder: (context, index) {
-                    final order = orders[index];
-                    final isSelected = _selectedIds.contains(order.id);
-
-                    return _SentOrderCard(
-                      order: order,
-                      isSelected: isSelected,
-                      onTap: () {
-                        if (_selectedIds.isNotEmpty &&
-                            order.status == OrderStatus.completed) {
-                          _toggleOrder(order);
-                        } else {
-                          SentOrderDetailsPage.show(context, order);
-                        }
-                      },
-                      onLongPress: () => _toggleOrder(order),
+                      ),
                     );
-                  },
-                ),
-        );
-      },
+                  }
+
+                  final order = orders[index];
+                  final isSelected = _selectedIds.contains(order.id);
+
+                  return _SentOrderCard(
+                    order: order,
+                    isSelected: isSelected,
+                    onTap: () {
+                      if (_selectedIds.isNotEmpty &&
+                          order.status == OrderStatus.completed) {
+                        _toggleOrder(order);
+                      } else {
+                        SentOrderDetailsPage.show(context, order);
+                      }
+                    },
+                    onLongPress: () => _toggleOrder(order),
+                  );
+                },
+              ),
+            ),
     );
   }
 }

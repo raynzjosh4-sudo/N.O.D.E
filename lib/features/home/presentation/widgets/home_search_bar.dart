@@ -4,6 +4,7 @@ import '../../../../core/theme/app_theme.dart';
 import 'package:node_app/core/utils/responsive_size.dart';
 
 class HomeSearchBar extends StatefulWidget {
+  final TextEditingController? controller;
   final VoidCallback? onTap;
   final VoidCallback? onFilterTap;
   final ValueChanged<String>? onChanged;
@@ -11,6 +12,7 @@ class HomeSearchBar extends StatefulWidget {
 
   const HomeSearchBar({
     super.key,
+    this.controller,
     this.onTap,
     this.onFilterTap,
     this.onChanged,
@@ -27,7 +29,7 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController();
+    _controller = widget.controller ?? TextEditingController();
   }
 
   @override

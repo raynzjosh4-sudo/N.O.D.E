@@ -36,13 +36,11 @@ class SentOrderDetailsPage extends ConsumerWidget {
 
     // 🔄 Reactive Sent Order Lookup:
     // We check the sentOrdersProvider specifically for this page.
-    final sentOrdersAsync = ref.watch(sentOrdersProvider);
-    final currentOrder =
-        sentOrdersAsync.whenOrNull(
-          data: (list) =>
-              list.firstWhere((o) => o.id == order.id, orElse: () => order),
-        ) ??
-        order;
+    final sentOrdersState = ref.watch(sentOrdersProvider);
+    final currentOrder = sentOrdersState.items.firstWhere(
+      (o) => o.id == order.id,
+      orElse: () => order,
+    );
 
     final pdfsAsync = ref.watch(userPdfsProvider);
     final linkedPdf = pdfsAsync.whenOrNull(

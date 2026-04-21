@@ -16,6 +16,30 @@ import 'package:node_app/features/profile/presentation/providers/pdf_providers.d
 import 'package:node_app/features/profile/domain/repositories/pdf_repository.dart';
 import 'package:node_app/features/auth/presentation/providers/auth_state_provider.dart';
 
+class WholesaleOrdersState {
+  final List<WholesaleOrder> items;
+  final bool isLoading;
+  final bool hasMore;
+
+  WholesaleOrdersState({
+    required this.items,
+    this.isLoading = false,
+    this.hasMore = true,
+  });
+
+  WholesaleOrdersState copyWith({
+    List<WholesaleOrder>? items,
+    bool? isLoading,
+    bool? hasMore,
+  }) {
+    return WholesaleOrdersState(
+      items: items ?? this.items,
+      isLoading: isLoading ?? this.isLoading,
+      hasMore: hasMore ?? this.hasMore,
+    );
+  }
+}
+
 final wholesaleOrderRepositoryProvider = Provider<WholesaleOrderRepositoryImpl>(
   (ref) {
     return WholesaleOrderRepositoryImpl(
@@ -36,7 +60,7 @@ final userIdProvider = Provider<String?>((ref) {
 final wholesaleOrdersProvider =
     StateNotifierProvider<
       WholesaleOrdersNotifier,
-      AsyncValue<List<WholesaleOrder>>
+      WholesaleOrdersState
     >((ref) {
       final userId = ref.watch(userIdProvider);
       return WholesaleOrdersNotifier(
@@ -46,9 +70,8 @@ final wholesaleOrdersProvider =
       );
     });
 
-/// 📦 Sent Orders Provider (Successfully Submitted)
 final sentOrdersProvider =
-    StateNotifierProvider<SentOrdersNotifier, AsyncValue<List<WholesaleOrder>>>(
+    StateNotifierProvider<SentOrdersNotifier, WholesaleOrdersState>(
       (ref) {
         final userId = ref.watch(userIdProvider);
         return SentOrdersNotifier(
@@ -60,42 +83,63 @@ final sentOrdersProvider =
 
 final pendingOrderForProductProvider = Provider.family<WholesaleOrder?, String>(
   (ref, productId) {
-    final ordersAsync = ref.watch(wholesaleOrdersProvider);
-    return ordersAsync.maybeWhen(
-      data: (orders) => orders.cast<WholesaleOrder?>().firstWhere(
-        (o) => o?.productId == productId && o?.status == OrderStatus.pending,
-        orElse: () => null,
-      ),
+    final state = ref.watch(wholesaleOrdersProvider);
+    return state.items.cast<WholesaleOrder?>().firstWhere(
+      (o) => o?.productId == productId && o?.status == OrderStatus.pending,
       orElse: () => null,
     );
   },
 );
 
-class WholesaleOrdersNotifier
-    extends StateNotifier<AsyncValue<List<WholesaleOrder>>> {
+class WholesaleOrdersNotifier extends StateNotifier<WholesaleOrdersState> {
   final WholesaleOrderRepositoryImpl _repository;
   final PdfRepository _pdfRepository;
   final String? _userId;
+  static const int _pageSize = 10;
 
   WholesaleOrdersNotifier(this._repository, this._pdfRepository, this._userId)
-    : super(const AsyncValue.loading()) {
+    : super(WholesaleOrdersState(items: [])) {
     if (_userId != null) {
       fetchOrders(_userId);
-    } else {
-      state = const AsyncValue.data([]);
     }
   }
 
   Future<void> fetchOrders(String userId) async {
-    state = const AsyncValue.loading();
-    final result = await _repository.getOrders(userId);
+    state = state.copyWith(isLoading: true);
+    final result = await _repository.getOrders(userId, limit: _pageSize);
     if (!mounted) return;
     result.fold(
-      (failure) => state = AsyncValue.error(
-        failure.toFriendlyMessage(),
-        StackTrace.current,
+      (failure) => state = state.copyWith(isLoading: false),
+      (orders) => state = state.copyWith(
+        items: orders,
+        isLoading: false,
+        hasMore: orders.length >= _pageSize,
       ),
-      (orders) => state = AsyncValue.data(orders),
+    );
+  }
+
+  Future<void> loadMore() async {
+    if (_userId == null || state.isLoading || !state.hasMore) return;
+
+    state = state.copyWith(isLoading: true);
+    final offset = state.items.length;
+
+    final result = await _repository.getOrders(
+      _userId!,
+      limit: _pageSize,
+      offset: offset,
+    );
+
+    if (!mounted) return;
+    result.fold(
+      (failure) => state = state.copyWith(isLoading: false),
+      (newOrders) {
+        state = state.copyWith(
+          items: [...state.items, ...newOrders],
+          isLoading: false,
+          hasMore: newOrders.length >= _pageSize,
+        );
+      },
     );
   }
 
@@ -114,12 +158,12 @@ class WholesaleOrdersNotifier
 
     // Optimistically update local state on success
     if (result.isRight()) {
-      final currentList = state.value ?? [];
-      final updatedList = <WholesaleOrder>[
-        order,
-        ...currentList.where((o) => o.id != order.id),
-      ];
-      state = AsyncValue.data(updatedList);
+      state = state.copyWith(
+        items: [
+          order,
+          ...state.items.where((o) => o.id != order.id),
+        ],
+      );
     }
 
     return result;
@@ -145,9 +189,8 @@ class WholesaleOrdersNotifier
 
     if (result.isRight()) {
       // 🚀 Optimistic Status Update: Remove from this list immediately
-      final currentList = state.value ?? [];
-      state = AsyncValue.data(
-        currentList.where((o) => o.id != order.id).toList(),
+      state = state.copyWith(
+        items: state.items.where((o) => o.id != order.id).toList(),
       );
 
       // 🔄 Refresh both providers so the order officially moves from Pending to Sent
@@ -171,37 +214,63 @@ class WholesaleOrdersNotifier
     final result = await _repository.deleteOrder(id);
 
     if (result.isRight()) {
-      final currentList = state.value ?? [];
-      state = AsyncValue.data(currentList.where((o) => o.id != id).toList());
+      state = state.copyWith(
+        items: state.items.where((o) => o.id != id).toList(),
+      );
     }
 
     return result;
   }
 }
 
-class SentOrdersNotifier
-    extends StateNotifier<AsyncValue<List<WholesaleOrder>>> {
+class SentOrdersNotifier extends StateNotifier<WholesaleOrdersState> {
   final WholesaleOrderRepositoryImpl _repository;
   final String? _userId;
+  static const int _pageSize = 10;
 
   SentOrdersNotifier(this._repository, this._userId)
-    : super(const AsyncValue.loading()) {
+    : super(WholesaleOrdersState(items: [])) {
     if (_userId != null) {
       fetchSentOrders(_userId);
-    } else {
-      state = const AsyncValue.data([]);
     }
   }
 
   Future<void> fetchSentOrders(String userId) async {
-    state = const AsyncValue.loading();
-    final result = await _repository.getSentOrders(userId);
+    state = state.copyWith(isLoading: true);
+    final result = await _repository.getSentOrders(userId, limit: _pageSize);
+    if (!mounted) return;
     result.fold(
-      (failure) => state = AsyncValue.error(
-        failure.toFriendlyMessage(),
-        StackTrace.current,
+      (failure) => state = state.copyWith(isLoading: false),
+      (orders) => state = state.copyWith(
+        items: orders,
+        isLoading: false,
+        hasMore: orders.length >= _pageSize,
       ),
-      (orders) => state = AsyncValue.data(orders),
+    );
+  }
+
+  Future<void> loadMore() async {
+    if (_userId == null || state.isLoading || !state.hasMore) return;
+
+    state = state.copyWith(isLoading: true);
+    final offset = state.items.length;
+
+    final result = await _repository.getSentOrders(
+      _userId!,
+      limit: _pageSize,
+      offset: offset,
+    );
+
+    if (!mounted) return;
+    result.fold(
+      (failure) => state = state.copyWith(isLoading: false),
+      (newOrders) {
+        state = state.copyWith(
+          items: [...state.items, ...newOrders],
+          isLoading: false,
+          hasMore: newOrders.length >= _pageSize,
+        );
+      },
     );
   }
 

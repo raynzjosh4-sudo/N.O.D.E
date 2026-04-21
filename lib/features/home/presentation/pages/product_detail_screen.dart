@@ -12,7 +12,6 @@ import '../providers/home_providers.dart';
 
 import '../widgets/product_media_section.dart';
 import 'productspecificationpage/product_specs_screen.dart';
-import 'package:node_app/features/home/presentation/pages/categories/categories_page.dart';
 import 'package:node_app/core/utils/responsive_size.dart';
 
 class ProductDetailScreen extends ConsumerStatefulWidget {

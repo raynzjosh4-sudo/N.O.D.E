@@ -1,12 +1,5 @@
-import 'dart:io';
-
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
 import 'package:flutter/foundation.dart';
-import 'package:path_provider/path_provider.dart';
-
-import 'package:path/path.dart' as p;
-import 'package:sqlite3_flutter_libs/sqlite3_flutter_libs.dart';
 
 import '../../features/inventory/data/models/products_table.dart';
 import '../../features/inventory/data/models/categories_table.dart';
@@ -20,6 +13,9 @@ import '../../features/profile/data/models/generated_pdfs_table.dart';
 import '../../features/profile/data/models/legal_terms_table.dart';
 import '../../features/home/data/models/search_history_table.dart';
 import '../../features/home/data/models/promotions_table.dart';
+import '../../features/records/data/models/records_table.dart';
+
+import 'connection/shared.dart' as impl;
 
 part 'app_database.g.dart';
 
@@ -37,34 +33,17 @@ part 'app_database.g.dart';
     PromotionsTable,
     TradingTermsTable,
     LegalTermsTable,
+    RecordsTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_executor);
 
   @override
-  int get schemaVersion => 28;
+  int get schemaVersion => 30;
 
-  // 🔒 Singleton Executor: Ensures only ONE connection exists for the whole app session.
-  // This prevents multiple background isolates from fighting over the database file.
-  static final QueryExecutor _executor = LazyDatabase(() async {
-    final dbFolder = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dbFolder.path, 'node_wholesale.sqlite'));
-
-    if (Platform.isAndroid) {
-      await applyWorkaroundToOpenSqlite3OnOldAndroidVersions();
-    }
-
-    return NativeDatabase.createInBackground(
-      file,
-      setup: (database) {
-        // WAL allows multiple concurrent readers and one writer
-        database.execute('PRAGMA journal_mode=WAL;');
-        // Wait up to 5s if the DB is busy before failing
-        database.execute('PRAGMA busy_timeout=5000;');
-      },
-    );
-  });
+  // 🔒 Platform-Agnostic Executor: Connects via Wasm on Web, or Native SQLite on desktop/mobile.
+  static final QueryExecutor _executor = impl.connect();
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -175,7 +154,6 @@ class AppDatabase extends _$AppDatabase {
           );
         }
       }
-
       if (from < 24) {
         // v24: Add trading_terms_table
         await m.createTable(tradingTermsTable);
@@ -201,7 +179,6 @@ class AppDatabase extends _$AppDatabase {
           );
         }
       }
-
       if (from < 27) {
         // v27: CRITICAL - Add updatedAt column if missing
         try {
@@ -211,13 +188,26 @@ class AppDatabase extends _$AppDatabase {
           print('ℹ️ [Migration] updatedAt column already exists, skipping.');
         }
       }
-
       if (from < 28) {
         // v28: Add aspectRatio to productsTable
         try {
           await m.addColumn(productsTable, productsTable.aspectRatio);
         } catch (e) {
           print('ℹ️ [Migration] aspectRatio column already exists, skipping.');
+        }
+      }
+      if (from < 29) {
+        // v29: Add records_table for local persistence
+        await m.createTable(recordsTable);
+      }
+      if (from < 30) {
+        // v30: Add isArchived to records_table
+        try {
+          await m.addColumn(recordsTable, recordsTable.isArchived);
+        } catch (e) {
+          debugPrint(
+            'ℹ️ [Migration] isArchived column already exists, skipping.',
+          );
         }
       }
     },

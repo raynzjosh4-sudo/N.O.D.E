@@ -1,6 +1,13 @@
+import 'dart:typed_data';
+
 class PdfGenerationResult {
-  final String filePath;
+  final Uint8List bytes;
+  final String fileName;
   final String fileSize;
 
-  PdfGenerationResult({required this.filePath, required this.fileSize});
+  PdfGenerationResult({
+    required this.bytes,
+    required this.fileName,
+    required this.fileSize,
+  });
 }

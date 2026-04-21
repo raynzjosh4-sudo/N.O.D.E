@@ -35,81 +35,101 @@ class _PendingOrdersTabState extends ConsumerState<PendingOrdersTab> {
 
   @override
   Widget build(BuildContext context) {
-    final ordersAsync = ref.watch(wholesaleOrdersProvider);
+    final ordersState = ref.watch(wholesaleOrdersProvider);
     final theme = Theme.of(context);
     final onSurface = theme.colorScheme.onSurface;
 
-    return ordersAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => NodeErrorState(
-        error: err,
-        onRetry: () => ref.refresh(wholesaleOrdersProvider),
-      ),
-      data: (rawOrders) {
-        // 🛡️ UI FILTER: Only show what is truly pending, even if the state refresh is pending
-        final orders = rawOrders.where((o) => o.status == OrderStatus.pending).toList();
+    final orders = ordersState.items
+        .where((o) => o.status == OrderStatus.pending)
+        .toList();
 
-        return RefreshIndicator(
-          onRefresh: () => ref.read(wholesaleOrdersProvider.notifier).refresh(),
-          child: orders.isEmpty
-              ? SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  child: Container(
-                    height: MediaQuery.of(context).size.height * 0.6,
-                    alignment: Alignment.center,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.hourglass_empty_rounded,
-                          size: 48.w,
-                          color: onSurface.withOpacity(0.2),
-                        ),
-                        SizedBox(height: 16.h),
-                        Text(
-                          'No pending orders',
-                          style: GoogleFonts.outfit(
-                            fontSize: 16.sp,
-                            color: onSurface.withOpacity(0.4),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
+    if (orders.isEmpty && ordersState.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return RefreshIndicator(
+      onRefresh: () => ref.read(wholesaleOrdersProvider.notifier).refresh(),
+      child: orders.isEmpty
+          ? SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Container(
+                height: MediaQuery.of(context).size.height * 0.6,
+                alignment: Alignment.center,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.hourglass_empty_rounded,
+                      size: 48.w,
+                      color: onSurface.withOpacity(0.2),
                     ),
-                  ),
-                )
-              : ValueListenableBuilder<Set<String>>(
-                  valueListenable: widget.selectedIdsNotifier,
-                  builder: (context, selectedIds, _) {
-                    return ListView.separated(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: EdgeInsets.zero,
-                      itemCount: orders.length,
-                      separatorBuilder: (context, _) => Divider(
-                          height: 1.h, color: onSurface.withOpacity(0.05)),
-                      itemBuilder: (context, index) {
-                        final order = orders[index];
-                        final isSelected = selectedIds.contains(order.id);
-
-                        return _PendingOrderCard(
-                          order: order,
-                          isSelected: isSelected,
-                          onTap: () {
-                            if (selectedIds.isNotEmpty) {
-                              _toggleSelection(order.id);
-                            } else {
-                              OrderDetailsPage.show(context, order);
-                            }
-                          },
-                          onLongPress: () => _toggleSelection(order.id),
-                        );
-                      },
-                    );
-                  },
+                    SizedBox(height: 16.h),
+                    Text(
+                      'No pending orders',
+                      style: GoogleFonts.outfit(
+                        fontSize: 16.sp,
+                        color: onSurface.withOpacity(0.4),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
-        );
+              ),
+            )
+          : ValueListenableBuilder<Set<String>>(
+              valueListenable: widget.selectedIdsNotifier,
+              builder: (context, selectedIds, _) {
+                return NotificationListener<ScrollNotification>(
+                  onNotification: (scrollInfo) {
+                    if (scrollInfo.metrics.pixels >=
+                        scrollInfo.metrics.maxScrollExtent - 200) {
+                      ref.read(wholesaleOrdersProvider.notifier).loadMore();
+                    }
+                    return false;
+                  },
+                  child: ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: EdgeInsets.zero,
+                    itemCount: orders.length + (ordersState.isLoading ? 1 : 0),
+                    separatorBuilder: (context, _) => Divider(
+                        height: 1.h, color: onSurface.withOpacity(0.05)),
+                    itemBuilder: (context, index) {
+                      if (index == orders.length) {
+                        return Padding(
+                          padding: EdgeInsets.symmetric(vertical: 24.h),
+                          child: Center(
+                            child: SizedBox(
+                              width: 20.w,
+                              height: 20.w,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: theme.primaryColor.withOpacity(0.5),
+                              ),
+                            ),
+                          ),
+                        );
+                      }
 
-      },
+                      final order = orders[index];
+                      final isSelected = selectedIds.contains(order.id);
+
+                      return _PendingOrderCard(
+                        order: order,
+                        isSelected: isSelected,
+                        onTap: () {
+                          if (selectedIds.isNotEmpty) {
+                            _toggleSelection(order.id);
+                          } else {
+                            OrderDetailsPage.show(context, order);
+                          }
+                        },
+                        onLongPress: () => _toggleSelection(order.id),
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
     );
   }
 }

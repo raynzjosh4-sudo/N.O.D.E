@@ -7871,6 +7871,487 @@ class LegalTermsTableCompanion extends UpdateCompanion<LegalTermEntry> {
   }
 }
 
+class $RecordsTableTable extends RecordsTable
+    with TableInfo<$RecordsTableTable, RecordEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RecordsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _detailJsonMeta = const VerificationMeta(
+    'detailJson',
+  );
+  @override
+  late final GeneratedColumn<String> detailJson = GeneratedColumn<String>(
+    'detail_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _recordsHistoryJsonMeta =
+      const VerificationMeta('recordsHistoryJson');
+  @override
+  late final GeneratedColumn<String> recordsHistoryJson =
+      GeneratedColumn<String>(
+        'records_history_json',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('[]'),
+      );
+  static const VerificationMeta _dataJsonMeta = const VerificationMeta(
+    'dataJson',
+  );
+  @override
+  late final GeneratedColumn<String> dataJson = GeneratedColumn<String>(
+    'data_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _reminderJsonMeta = const VerificationMeta(
+    'reminderJson',
+  );
+  @override
+  late final GeneratedColumn<String> reminderJson = GeneratedColumn<String>(
+    'reminder_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _isArchivedMeta = const VerificationMeta(
+    'isArchived',
+  );
+  @override
+  late final GeneratedColumn<bool> isArchived = GeneratedColumn<bool>(
+    'is_archived',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_archived" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    detailJson,
+    recordsHistoryJson,
+    dataJson,
+    reminderJson,
+    updatedAt,
+    isArchived,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'records_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RecordEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('detail_json')) {
+      context.handle(
+        _detailJsonMeta,
+        detailJson.isAcceptableOrUnknown(data['detail_json']!, _detailJsonMeta),
+      );
+    }
+    if (data.containsKey('records_history_json')) {
+      context.handle(
+        _recordsHistoryJsonMeta,
+        recordsHistoryJson.isAcceptableOrUnknown(
+          data['records_history_json']!,
+          _recordsHistoryJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('data_json')) {
+      context.handle(
+        _dataJsonMeta,
+        dataJson.isAcceptableOrUnknown(data['data_json']!, _dataJsonMeta),
+      );
+    }
+    if (data.containsKey('reminder_json')) {
+      context.handle(
+        _reminderJsonMeta,
+        reminderJson.isAcceptableOrUnknown(
+          data['reminder_json']!,
+          _reminderJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('is_archived')) {
+      context.handle(
+        _isArchivedMeta,
+        isArchived.isAcceptableOrUnknown(data['is_archived']!, _isArchivedMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  RecordEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RecordEntry(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      detailJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}detail_json'],
+      ),
+      recordsHistoryJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}records_history_json'],
+      )!,
+      dataJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}data_json'],
+      ),
+      reminderJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reminder_json'],
+      ),
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      isArchived: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_archived'],
+      )!,
+    );
+  }
+
+  @override
+  $RecordsTableTable createAlias(String alias) {
+    return $RecordsTableTable(attachedDatabase, alias);
+  }
+}
+
+class RecordEntry extends DataClass implements Insertable<RecordEntry> {
+  final String id;
+  final String? detailJson;
+  final String recordsHistoryJson;
+  final String? dataJson;
+  final String? reminderJson;
+  final DateTime updatedAt;
+  final bool isArchived;
+  const RecordEntry({
+    required this.id,
+    this.detailJson,
+    required this.recordsHistoryJson,
+    this.dataJson,
+    this.reminderJson,
+    required this.updatedAt,
+    required this.isArchived,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    if (!nullToAbsent || detailJson != null) {
+      map['detail_json'] = Variable<String>(detailJson);
+    }
+    map['records_history_json'] = Variable<String>(recordsHistoryJson);
+    if (!nullToAbsent || dataJson != null) {
+      map['data_json'] = Variable<String>(dataJson);
+    }
+    if (!nullToAbsent || reminderJson != null) {
+      map['reminder_json'] = Variable<String>(reminderJson);
+    }
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['is_archived'] = Variable<bool>(isArchived);
+    return map;
+  }
+
+  RecordsTableCompanion toCompanion(bool nullToAbsent) {
+    return RecordsTableCompanion(
+      id: Value(id),
+      detailJson: detailJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(detailJson),
+      recordsHistoryJson: Value(recordsHistoryJson),
+      dataJson: dataJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dataJson),
+      reminderJson: reminderJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reminderJson),
+      updatedAt: Value(updatedAt),
+      isArchived: Value(isArchived),
+    );
+  }
+
+  factory RecordEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RecordEntry(
+      id: serializer.fromJson<String>(json['id']),
+      detailJson: serializer.fromJson<String?>(json['detailJson']),
+      recordsHistoryJson: serializer.fromJson<String>(
+        json['recordsHistoryJson'],
+      ),
+      dataJson: serializer.fromJson<String?>(json['dataJson']),
+      reminderJson: serializer.fromJson<String?>(json['reminderJson']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      isArchived: serializer.fromJson<bool>(json['isArchived']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'detailJson': serializer.toJson<String?>(detailJson),
+      'recordsHistoryJson': serializer.toJson<String>(recordsHistoryJson),
+      'dataJson': serializer.toJson<String?>(dataJson),
+      'reminderJson': serializer.toJson<String?>(reminderJson),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'isArchived': serializer.toJson<bool>(isArchived),
+    };
+  }
+
+  RecordEntry copyWith({
+    String? id,
+    Value<String?> detailJson = const Value.absent(),
+    String? recordsHistoryJson,
+    Value<String?> dataJson = const Value.absent(),
+    Value<String?> reminderJson = const Value.absent(),
+    DateTime? updatedAt,
+    bool? isArchived,
+  }) => RecordEntry(
+    id: id ?? this.id,
+    detailJson: detailJson.present ? detailJson.value : this.detailJson,
+    recordsHistoryJson: recordsHistoryJson ?? this.recordsHistoryJson,
+    dataJson: dataJson.present ? dataJson.value : this.dataJson,
+    reminderJson: reminderJson.present ? reminderJson.value : this.reminderJson,
+    updatedAt: updatedAt ?? this.updatedAt,
+    isArchived: isArchived ?? this.isArchived,
+  );
+  RecordEntry copyWithCompanion(RecordsTableCompanion data) {
+    return RecordEntry(
+      id: data.id.present ? data.id.value : this.id,
+      detailJson: data.detailJson.present
+          ? data.detailJson.value
+          : this.detailJson,
+      recordsHistoryJson: data.recordsHistoryJson.present
+          ? data.recordsHistoryJson.value
+          : this.recordsHistoryJson,
+      dataJson: data.dataJson.present ? data.dataJson.value : this.dataJson,
+      reminderJson: data.reminderJson.present
+          ? data.reminderJson.value
+          : this.reminderJson,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      isArchived: data.isArchived.present
+          ? data.isArchived.value
+          : this.isArchived,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RecordEntry(')
+          ..write('id: $id, ')
+          ..write('detailJson: $detailJson, ')
+          ..write('recordsHistoryJson: $recordsHistoryJson, ')
+          ..write('dataJson: $dataJson, ')
+          ..write('reminderJson: $reminderJson, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('isArchived: $isArchived')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    detailJson,
+    recordsHistoryJson,
+    dataJson,
+    reminderJson,
+    updatedAt,
+    isArchived,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RecordEntry &&
+          other.id == this.id &&
+          other.detailJson == this.detailJson &&
+          other.recordsHistoryJson == this.recordsHistoryJson &&
+          other.dataJson == this.dataJson &&
+          other.reminderJson == this.reminderJson &&
+          other.updatedAt == this.updatedAt &&
+          other.isArchived == this.isArchived);
+}
+
+class RecordsTableCompanion extends UpdateCompanion<RecordEntry> {
+  final Value<String> id;
+  final Value<String?> detailJson;
+  final Value<String> recordsHistoryJson;
+  final Value<String?> dataJson;
+  final Value<String?> reminderJson;
+  final Value<DateTime> updatedAt;
+  final Value<bool> isArchived;
+  final Value<int> rowid;
+  const RecordsTableCompanion({
+    this.id = const Value.absent(),
+    this.detailJson = const Value.absent(),
+    this.recordsHistoryJson = const Value.absent(),
+    this.dataJson = const Value.absent(),
+    this.reminderJson = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.isArchived = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RecordsTableCompanion.insert({
+    required String id,
+    this.detailJson = const Value.absent(),
+    this.recordsHistoryJson = const Value.absent(),
+    this.dataJson = const Value.absent(),
+    this.reminderJson = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.isArchived = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id);
+  static Insertable<RecordEntry> custom({
+    Expression<String>? id,
+    Expression<String>? detailJson,
+    Expression<String>? recordsHistoryJson,
+    Expression<String>? dataJson,
+    Expression<String>? reminderJson,
+    Expression<DateTime>? updatedAt,
+    Expression<bool>? isArchived,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (detailJson != null) 'detail_json': detailJson,
+      if (recordsHistoryJson != null)
+        'records_history_json': recordsHistoryJson,
+      if (dataJson != null) 'data_json': dataJson,
+      if (reminderJson != null) 'reminder_json': reminderJson,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (isArchived != null) 'is_archived': isArchived,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RecordsTableCompanion copyWith({
+    Value<String>? id,
+    Value<String?>? detailJson,
+    Value<String>? recordsHistoryJson,
+    Value<String?>? dataJson,
+    Value<String?>? reminderJson,
+    Value<DateTime>? updatedAt,
+    Value<bool>? isArchived,
+    Value<int>? rowid,
+  }) {
+    return RecordsTableCompanion(
+      id: id ?? this.id,
+      detailJson: detailJson ?? this.detailJson,
+      recordsHistoryJson: recordsHistoryJson ?? this.recordsHistoryJson,
+      dataJson: dataJson ?? this.dataJson,
+      reminderJson: reminderJson ?? this.reminderJson,
+      updatedAt: updatedAt ?? this.updatedAt,
+      isArchived: isArchived ?? this.isArchived,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (detailJson.present) {
+      map['detail_json'] = Variable<String>(detailJson.value);
+    }
+    if (recordsHistoryJson.present) {
+      map['records_history_json'] = Variable<String>(recordsHistoryJson.value);
+    }
+    if (dataJson.present) {
+      map['data_json'] = Variable<String>(dataJson.value);
+    }
+    if (reminderJson.present) {
+      map['reminder_json'] = Variable<String>(reminderJson.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (isArchived.present) {
+      map['is_archived'] = Variable<bool>(isArchived.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RecordsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('detailJson: $detailJson, ')
+          ..write('recordsHistoryJson: $recordsHistoryJson, ')
+          ..write('dataJson: $dataJson, ')
+          ..write('reminderJson: $reminderJson, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('isArchived: $isArchived, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -7899,6 +8380,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $LegalTermsTableTable legalTermsTable = $LegalTermsTableTable(
     this,
   );
+  late final $RecordsTableTable recordsTable = $RecordsTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -7916,6 +8398,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     promotionsTable,
     tradingTermsTable,
     legalTermsTable,
+    recordsTable,
   ];
 }
 
@@ -11778,6 +12261,252 @@ typedef $$LegalTermsTableTableProcessedTableManager =
       LegalTermEntry,
       PrefetchHooks Function()
     >;
+typedef $$RecordsTableTableCreateCompanionBuilder =
+    RecordsTableCompanion Function({
+      required String id,
+      Value<String?> detailJson,
+      Value<String> recordsHistoryJson,
+      Value<String?> dataJson,
+      Value<String?> reminderJson,
+      Value<DateTime> updatedAt,
+      Value<bool> isArchived,
+      Value<int> rowid,
+    });
+typedef $$RecordsTableTableUpdateCompanionBuilder =
+    RecordsTableCompanion Function({
+      Value<String> id,
+      Value<String?> detailJson,
+      Value<String> recordsHistoryJson,
+      Value<String?> dataJson,
+      Value<String?> reminderJson,
+      Value<DateTime> updatedAt,
+      Value<bool> isArchived,
+      Value<int> rowid,
+    });
+
+class $$RecordsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $RecordsTableTable> {
+  $$RecordsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get detailJson => $composableBuilder(
+    column: $table.detailJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get recordsHistoryJson => $composableBuilder(
+    column: $table.recordsHistoryJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get dataJson => $composableBuilder(
+    column: $table.dataJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reminderJson => $composableBuilder(
+    column: $table.reminderJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isArchived => $composableBuilder(
+    column: $table.isArchived,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$RecordsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $RecordsTableTable> {
+  $$RecordsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get detailJson => $composableBuilder(
+    column: $table.detailJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get recordsHistoryJson => $composableBuilder(
+    column: $table.recordsHistoryJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get dataJson => $composableBuilder(
+    column: $table.dataJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reminderJson => $composableBuilder(
+    column: $table.reminderJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isArchived => $composableBuilder(
+    column: $table.isArchived,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$RecordsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RecordsTableTable> {
+  $$RecordsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get detailJson => $composableBuilder(
+    column: $table.detailJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get recordsHistoryJson => $composableBuilder(
+    column: $table.recordsHistoryJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get dataJson =>
+      $composableBuilder(column: $table.dataJson, builder: (column) => column);
+
+  GeneratedColumn<String> get reminderJson => $composableBuilder(
+    column: $table.reminderJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get isArchived => $composableBuilder(
+    column: $table.isArchived,
+    builder: (column) => column,
+  );
+}
+
+class $$RecordsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $RecordsTableTable,
+          RecordEntry,
+          $$RecordsTableTableFilterComposer,
+          $$RecordsTableTableOrderingComposer,
+          $$RecordsTableTableAnnotationComposer,
+          $$RecordsTableTableCreateCompanionBuilder,
+          $$RecordsTableTableUpdateCompanionBuilder,
+          (
+            RecordEntry,
+            BaseReferences<_$AppDatabase, $RecordsTableTable, RecordEntry>,
+          ),
+          RecordEntry,
+          PrefetchHooks Function()
+        > {
+  $$RecordsTableTableTableManager(_$AppDatabase db, $RecordsTableTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RecordsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RecordsTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RecordsTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String?> detailJson = const Value.absent(),
+                Value<String> recordsHistoryJson = const Value.absent(),
+                Value<String?> dataJson = const Value.absent(),
+                Value<String?> reminderJson = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<bool> isArchived = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RecordsTableCompanion(
+                id: id,
+                detailJson: detailJson,
+                recordsHistoryJson: recordsHistoryJson,
+                dataJson: dataJson,
+                reminderJson: reminderJson,
+                updatedAt: updatedAt,
+                isArchived: isArchived,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                Value<String?> detailJson = const Value.absent(),
+                Value<String> recordsHistoryJson = const Value.absent(),
+                Value<String?> dataJson = const Value.absent(),
+                Value<String?> reminderJson = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<bool> isArchived = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RecordsTableCompanion.insert(
+                id: id,
+                detailJson: detailJson,
+                recordsHistoryJson: recordsHistoryJson,
+                dataJson: dataJson,
+                reminderJson: reminderJson,
+                updatedAt: updatedAt,
+                isArchived: isArchived,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$RecordsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $RecordsTableTable,
+      RecordEntry,
+      $$RecordsTableTableFilterComposer,
+      $$RecordsTableTableOrderingComposer,
+      $$RecordsTableTableAnnotationComposer,
+      $$RecordsTableTableCreateCompanionBuilder,
+      $$RecordsTableTableUpdateCompanionBuilder,
+      (
+        RecordEntry,
+        BaseReferences<_$AppDatabase, $RecordsTableTable, RecordEntry>,
+      ),
+      RecordEntry,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -11806,4 +12535,6 @@ class $AppDatabaseManager {
       $$TradingTermsTableTableTableManager(_db, _db.tradingTermsTable);
   $$LegalTermsTableTableTableManager get legalTermsTable =>
       $$LegalTermsTableTableTableManager(_db, _db.legalTermsTable);
+  $$RecordsTableTableTableManager get recordsTable =>
+      $$RecordsTableTableTableManager(_db, _db.recordsTable);
 }

@@ -1,11 +1,10 @@
-import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:node_app/core/database/app_database.dart';
 import 'package:node_app/features/auth/domain/entities/business_profile.dart';
 import 'package:node_app/features/profile/domain/entities/wholesale_order.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:path_provider/path_provider.dart';
+
 import 'package:intl/intl.dart';
 
 import 'models/pdf_result.dart';
@@ -247,18 +246,19 @@ class OrderPdfService {
         ),
       );
 
-      // 3. Save to disk
-      final dir = await getApplicationDocumentsDirectory();
+      // 3. Generate bytes (No disk save for web compatibility)
       final safeName = title.replaceAll(RegExp(r'[^\w\s\-]'), '').trim();
-      final file = File('${dir.path}/$safeName.pdf');
       final bytes = await doc.save();
-      await file.writeAsBytes(bytes);
 
       final sizeDisplay = bytes.length > 1024 * 1024
           ? '${(bytes.length / (1024 * 1024)).toStringAsFixed(1)} MB'
           : '${(bytes.length / 1024).toStringAsFixed(1)} KB';
 
-      return PdfGenerationResult(filePath: file.path, fileSize: sizeDisplay);
+      return PdfGenerationResult(
+        bytes: bytes,
+        fileName: '$safeName.pdf',
+        fileSize: sizeDisplay,
+      );
     } catch (e, stack) {
       print('CRITICAL ERROR in OrderPdfService.generate: $e');
       print('STACK TRACE:\n$stack');

@@ -3,7 +3,7 @@ import 'package:equatable/equatable.dart';
 class BusinessProfile extends Equatable {
   final String id;
   final String legalName;
-  
+
   // Logistics - Matches SQL
   final String? phoneNumber;
   final double? latitude;
@@ -27,14 +27,14 @@ class BusinessProfile extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        legalName,
-        phoneNumber,
-        latitude,
-        longitude,
-        region,
-        city,
-        physicalAddress,
-        updatedAt,
-      ];
+    id,
+    legalName,
+    phoneNumber,
+    latitude,
+    longitude,
+    region,
+    city,
+    physicalAddress,
+    updatedAt,
+  ];
 }

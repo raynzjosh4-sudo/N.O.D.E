@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:async';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'package:flutter/foundation.dart';
@@ -23,12 +23,13 @@ class CloudMediaService {
   /// Uploads any media type to a specific folder in Cloudflare R2.
   /// Structure: users/{user_id}/{folderName}/Chart_{timestamp}.ext
   Future<String?> uploadMedia(
-    File imageFile, {
+    Uint8List fileBytes, {
+    required String originalName,
     required String userId,
     required String folderName,
     void Function(int, int)? onProgress,
   }) async {
-    final extension = path.extension(imageFile.path);
+    final extension = path.extension(originalName);
     final rawFileName =
         'Chart_${DateTime.now().millisecondsSinceEpoch}$extension';
 
@@ -41,20 +42,17 @@ class CloudMediaService {
       debugPrint('☁️ [R2] Uploading to bucket: $bucketName');
       debugPrint('☁️ [R2] Object key: $objectKey');
 
-      final fileSize = await imageFile.length();
-      int uploadedBytes = 0;
+      final fileSize = fileBytes.length;
 
       final mimeType =
-          lookupMimeType(imageFile.path) ?? 'application/octet-stream';
+          lookupMimeType(originalName) ?? 'application/octet-stream';
 
       // 👑 PROGRESS WRAPPER: Convert file into a stream that we can monitor
-      final stream = imageFile.openRead().map((chunk) {
-        uploadedBytes += chunk.length;
-        if (onProgress != null) {
-          onProgress(uploadedBytes, fileSize);
-        }
-        return Uint8List.fromList(chunk);
-      });
+      final stream = Stream.fromIterable([fileBytes]);
+
+      if (onProgress != null) {
+        onProgress(fileSize, fileSize);
+      }
 
       await _minio.putObject(
         bucketName,
@@ -78,14 +76,19 @@ class CloudMediaService {
 
   /// Bulk upload helper
   Future<List<String>> uploadBatch(
-    List<File> files, {
+    List<Map<String, dynamic>> files, {
     required String userId,
     required String folderName,
   }) async {
     final List<Future<String?>> uploads = [];
     for (int i = 0; i < files.length; i++) {
       uploads.add(
-        uploadMedia(files[i], userId: userId, folderName: folderName),
+        uploadMedia(
+          files[i]['bytes'] as Uint8List,
+          originalName: files[i]['name'] as String,
+          userId: userId,
+          folderName: folderName,
+        ),
       );
     }
 

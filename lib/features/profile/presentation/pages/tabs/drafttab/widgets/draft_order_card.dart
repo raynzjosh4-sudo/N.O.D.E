@@ -196,7 +196,8 @@ class DraftOrderCard extends ConsumerWidget {
                           id: pdfId,
                           userId: user.id,
                           title: 'Order Draft: ${draft.id}',
-                          filePath: pdfResult.filePath,
+                          bytes: pdfResult.bytes,
+                          fileName: pdfResult.fileName,
                           fileSize: pdfResult.fileSize,
                         );
 

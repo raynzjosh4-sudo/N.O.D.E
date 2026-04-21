@@ -14,7 +14,7 @@ import 'package:node_app/features/home/domain/entities/supplier.dart';
 import 'package:node_app/core/domain/entities/location.dart';
 import 'package:node_app/features/home/presentation/pages/specificationorderpage/order_models.dart';
 import 'package:node_app/core/database/app_database.dart';
-import 'package:drift/drift.dart' hide Column;
+import 'package:drift/drift.dart' as drift;
 import 'package:node_app/features/home/presentation/pages/notifications/data/notification_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -70,8 +70,22 @@ class WholesaleOrderRepositoryImpl {
             .from('supplier_orders')
             .upsert(payload, onConflict: 'order_id');
       } catch (e) {
-        final msg = e.toString();
-        if (msg.contains('pdf_url') && msg.contains('schema cache')) {
+        final errorStr = e.toString();
+
+        // 🛡️ SELF-HEALING: Detect Foreign Key Violation (23503) or Missing Column
+        if (errorStr.contains('23503') ||
+            errorStr.contains('violates foreign key constraint')) {
+          print(
+            '🛡️ [OrderRepo] FK Violation in supplier_orders (PDF sync lag). Retrying without pdf_id/pdf_url...',
+          );
+          final fallback = Map<String, dynamic>.from(payload)
+            ..remove('pdf_id')
+            ..remove('pdf_url');
+          await _client
+              .from('supplier_orders')
+              .upsert(fallback, onConflict: 'order_id');
+        } else if (errorStr.contains('pdf_url') &&
+            errorStr.contains('schema cache')) {
           // Column doesn't exist yet — retry without it
           print(
             '⚠️ [OrderRepo] pdf_url column missing, retrying without it...',
@@ -89,8 +103,8 @@ class WholesaleOrderRepositoryImpl {
       print('✅ [OrderRepo] Order sent to supplier successfully.');
 
       // 🧨 TRANSFER & DESTROY: Now that the order is safely at the supplier,
-      // we remove it from the pending/active list entirely. (Local First)
-      final deleteResult = await deleteOrder(order.id);
+      // we remove it from the pending/active list JUST on the draft side.
+      final deleteResult = await _deleteDraftOnly(order.id);
 
       return deleteResult;
     } catch (e) {
@@ -144,19 +158,19 @@ class WholesaleOrderRepositoryImpl {
               itemsJson: entriesJson,
               totalAmount: order.totalAmount,
               totalUnits: order.totalUnits,
-              status: Value(order.status.name.toUpperCase()),
-              pdfId: Value(order.pdfId),
-              productId: Value(order.productId),
-              supplierId: Value(order.supplierId),
-              createdAt: Value(order.date),
-              updatedAt: Value(DateTime.now()),
+              status: drift.Value(order.status.name.toUpperCase()),
+              pdfId: drift.Value(order.pdfId),
+              productId: drift.Value(order.productId),
+              supplierId: drift.Value(order.supplierId),
+              createdAt: drift.Value(order.date),
+              updatedAt: drift.Value(DateTime.now()),
             ),
           );
       print('✅ [OrderRepo] Order ${order.id} saved to local Drift.');
 
       // 🌐 2. Sync to Supabase in the background (Replication)
       try {
-        await _client.from('orders_table').upsert({
+        final payload = {
           'id': order.id,
           'user_id': userId,
           'total_amount': order.totalAmount,
@@ -165,11 +179,40 @@ class WholesaleOrderRepositoryImpl {
           'entries_json': jsonDecode(entriesJson),
           'updated_at': DateTime.now().toUtc().toIso8601String(),
           'created_at': order.date.toUtc().toIso8601String(),
-        }, onConflict: 'id');
+        };
+
+        await _client.from('orders_table').upsert(payload, onConflict: 'id');
         print('✅ [OrderRepo] Order ${order.id} synced to cloud.');
       } catch (e) {
-        print('⚠️ [OrderRepo] Cloud sync failed, but local save succeeded: $e');
-        // We don't return an error here because the "Local Level" was successful.
+        final errorStr = e.toString();
+        // 🛡️ SELF-HEALING: Detect Foreign Key Violation (23503)
+        // Usually means the PDF Manifest hasn't synced to Supabase yet.
+        if (errorStr.contains('23503') ||
+            errorStr.contains('violates foreign key constraint')) {
+          print(
+            '🛡️ [OrderRepo] FK Violation detected (PDF sync lag). Retrying sync without pdf_id...',
+          );
+          try {
+            await _client.from('orders_table').upsert({
+              'id': order.id,
+              'user_id': userId,
+              'total_amount': order.totalAmount,
+              'status': targetStatus,
+              'entries_json': jsonDecode(entriesJson),
+              'updated_at': DateTime.now().toUtc().toIso8601String(),
+              'created_at': order.date.toUtc().toIso8601String(),
+            }, onConflict: 'id');
+            print(
+              '✅ [OrderRepo] Self-healing sync successful: Order saved without PDF link.',
+            );
+          } catch (retryError) {
+            print('❌ [OrderRepo] Critical sync failure: $retryError');
+          }
+        } else {
+          print(
+            '⚠️ [OrderRepo] Cloud sync failed, but local save succeeded: $e',
+          );
+        }
       }
 
       // 3. Create In-App Notification (Remote)
@@ -195,10 +238,14 @@ class WholesaleOrderRepositoryImpl {
     }
   }
 
-  Future<Either<Failure, List<WholesaleOrder>>> getOrders(String userId) async {
+  Future<Either<Failure, List<WholesaleOrder>>> getOrders(
+    String userId, {
+    int limit = 10,
+    int offset = 0,
+  }) async {
     try {
       print(
-        '📥 [OrderRepo] Fetching orders for user $userId (Primary: LOCAL)...',
+        '📥 [OrderRepo] Fetching orders for user $userId (Pagination: L$limit, O$offset)...',
       );
 
       // 💾 1. Get from Local Drift first
@@ -207,18 +254,20 @@ class WholesaleOrderRepositoryImpl {
                 ..where((t) => t.userId.equals(userId))
                 ..where((t) => t.status.equals('PENDING'))
                 ..orderBy([
-                  (t) => OrderingTerm(
+                  (t) => drift.OrderingTerm(
                     expression: t.createdAt,
-                    mode: OrderingMode.desc,
+                    mode: drift.OrderingMode.desc,
                   ),
-                ]))
+                ])
+                ..limit(limit, offset: offset))
               .get();
 
       final orders = localRows.map((row) => _driftToDomain(row)).toList();
       print('✅ [OrderRepo] Fetched ${orders.length} orders from local DB.');
 
-      // 🌐 2. Trigger Background Sync from Supabase, but skip if we just deleted something
-      _syncPendingOrdersFromCloud(userId);
+      // 🌐 2. Trigger Background Sync from Supabase
+      // Only do reconciliation on the first page to avoid redundant checks
+      _syncPendingOrdersFromCloud(userId, reconcile: offset == 0);
 
       return Right(orders);
     } catch (e) {
@@ -227,16 +276,54 @@ class WholesaleOrderRepositoryImpl {
     }
   }
 
-  /// Background helper to sync cloud orders to local drift storage
-  Future<void> _syncPendingOrdersFromCloud(String userId) async {
+  /// Background helper to sync cloud orders to local drift storage.
+  /// If [reconcile] is true, it will delete local records that do not exist in the cloud.
+  Future<void> _syncPendingOrdersFromCloud(
+    String userId, {
+    bool reconcile = false,
+  }) async {
     try {
+      // 1. Fetch cloud records for this user
       final response = await _client
           .from('orders_table')
-          .select()
+          .select(
+            'id, entries_json, total_amount, total_units, status, pdf_id, product_id, supplier_id, created_at, updated_at',
+          )
           .eq('user_id', userId)
           .eq('status', 'pending');
 
       final List<dynamic> data = response as List;
+      final Set<String> cloudIds = data
+          .map((row) => row['id'] as String)
+          .toSet();
+
+      // 2. Reconciliation: Purge local ghost data
+      if (reconcile) {
+        final localPending =
+            await (_db.select(_db.ordersTable)
+                  ..where((t) => t.userId.equals(userId))
+                  ..where((t) => t.status.equals('PENDING')))
+                .get();
+
+        for (final local in localPending) {
+          if (!cloudIds.contains(local.id)) {
+            // Check age to avoid deleting brand new local drafts that haven't synced yet
+            final age = DateTime.now().difference(
+              local.createdAt ?? DateTime.now(),
+            );
+            if (age.inMinutes > 5) {
+              print(
+                '🧹 [OrderRepo] Reconciliation: Deleting ghost local order ${local.id}',
+              );
+              await (_db.delete(
+                _db.ordersTable,
+              )..where((t) => t.id.equals(local.id))).go();
+            }
+          }
+        }
+      }
+
+      // 3. Upsert/Update from cloud
       for (final row in data) {
         final order = _rowToDomain(row);
         await _db
@@ -250,31 +337,38 @@ class WholesaleOrderRepositoryImpl {
                 ),
                 totalAmount: order.totalAmount,
                 totalUnits: order.totalUnits,
-                status: Value(order.status.name.toUpperCase()),
-                pdfId: Value(order.pdfId),
-                productId: Value(order.productId),
-                supplierId: Value(order.supplierId),
-                createdAt: Value(order.date),
-                updatedAt: Value(DateTime.now()),
+                status: drift.Value(order.status.name.toUpperCase()),
+                pdfId: drift.Value(order.pdfId),
+                productId: drift.Value(order.productId),
+                supplierId: drift.Value(order.supplierId),
+                createdAt: drift.Value(order.date),
+                updatedAt: drift.Value(DateTime.now()),
               ),
             );
       }
-      print('🔄 [OrderRepo] Background cloud sync complete for $userId.');
+      print(
+        '🔄 [OrderRepo] Background cloud sync & reconciliation complete for $userId.',
+      );
     } catch (e) {
       print('⚠️ [OrderRepo] Background sync error: $e');
     }
   }
 
   Future<Either<Failure, List<WholesaleOrder>>> getSentOrders(
-    String userId,
-  ) async {
+    String userId, {
+    int limit = 10,
+    int offset = 0,
+  }) async {
     try {
-      print('📥 [OrderRepo] Fetching SENT orders for user $userId...');
+      print(
+        '📥 [OrderRepo] Fetching SENT orders for user $userId (Range: O$offset to ${offset + limit})...',
+      );
       final response = await _client
           .from('supplier_orders')
           .select()
           .eq('user_id', userId)
-          .order('created_at', ascending: false);
+          .order('created_at', ascending: false)
+          .range(offset, offset + limit - 1);
 
       final List<dynamic> data = response as List;
       print('✅ [OrderRepo] Fetched ${data.length} sent orders.');
@@ -322,30 +416,47 @@ class WholesaleOrderRepositoryImpl {
 
   Future<Either<Failure, Unit>> deleteOrder(String id) async {
     try {
-      print('🗑️ [OrderRepo] Deleting order $id (Primary: LOCAL)...');
+      print('🗑️ [OrderRepo] Deleting order $id (Full Wipe)...');
 
-      // 💾 1. Delete from Local Drift DB FIRST
-      final localDeleteCount = await (_db.delete(
-        _db.ordersTable,
-      )..where((t) => t.id.equals(id))).go();
+      // 1. Delete the draft (Local and Cloud)
+      await _deleteDraftOnly(id);
 
-      if (localDeleteCount == 0) {
+      // 2. 🥊 STRIKE 3: Attempt DELETE from supplier_orders (for sent/completed orders)
+      try {
+        final currentUserId = _client.auth.currentUser?.id;
+        var query = _client.from('supplier_orders').delete().eq('order_id', id);
+        if (currentUserId != null) {
+          query = query.eq('user_id', currentUserId);
+        }
+        await query;
         print(
-          '⚠️ [OrderRepo] Drift delete for $id affected 0 rows. This is strange if it was just in the UI.',
+          '✅ [OrderRepo] Strike 3: Order $id deleted from supplier_orders.',
         );
-        // Nuclear fallback: try deleting anything with this ID regardless of case or whitespace
-        await (_db.delete(
-          _db.ordersTable,
-        )..where((t) => t.id.like('%$id%'))).go();
-      } else {
+      } catch (e) {
         print(
-          '✅ [OrderRepo] Order $id deleted from local Drift ($localDeleteCount rows).',
+          '⚠️ [OrderRepo] Strike 3 (Delete supplier_orders) failed for $id: $e',
         );
       }
 
-      // 🌐 2. Delete from Supabase (Double-Strike Strategy)
-      
-      // 🥊 STRIKE 1: Update status to 'processing' (Most users have UPDATE permission)
+      return const Right(unit);
+    } catch (e) {
+      print('❌ [OrderRepo] DELETE FAILED for $id: $e');
+      return Left(Failure.fromException(e));
+    }
+  }
+
+  /// Internal helper to remove an order from the 'Drafts' / 'Pending' stage.
+  /// Does NOT touch 'supplier_orders'.
+  Future<Either<Failure, Unit>> _deleteDraftOnly(String id) async {
+    try {
+      print('🧹 [OrderRepo] Cleaning up draft/pending state for $id...');
+
+      // 💾 1. Delete from Local Drift DB
+      await (_db.delete(_db.ordersTable)..where((t) => t.id.equals(id))).go();
+
+      // 🌐 2. Cloud Cleanup (Double-Strike)
+
+      // Strike 1: Update status to 'processing' (Safe fallback)
       try {
         await _client
             .from('orders_table')
@@ -354,44 +465,24 @@ class WholesaleOrderRepositoryImpl {
               'updated_at': DateTime.now().toUtc().toIso8601String(),
             })
             .eq('id', id);
-        print('✅ [OrderRepo] Strike 1: Order $id status shifted on cloud.');
       } catch (e) {
-        print('⚠️ [OrderRepo] Strike 1 (Status Update) failed for $id: $e');
+        print('⚠️ [OrderRepo] Draft Strike 1 failed: $e');
       }
 
-      // 🥊 STRIKE 2: Attempt the absolute DELETE
+      // Strike 2: Hard Delete from orders_table
       try {
         final currentUserId = _client.auth.currentUser?.id;
         var query = _client.from('orders_table').delete().eq('id', id);
         if (currentUserId != null) {
           query = query.eq('user_id', currentUserId);
         }
-
-        // Execute raw delete without `.select()` which often fails under standard RLS policies
         await query;
-        print(
-          '✅ [OrderRepo] Strike 2: Order $id deleted from cloud permanently.',
-        );
       } catch (e) {
-        print('❌ [OrderRepo] Strike 2 (Delete) failed for $id: $e');
-      }
-
-      // 🥊 STRIKE 3: Attempt DELETE from supplier_orders (for sent/completed orders)
-      try {
-        final currentUserId = _client.auth.currentUser?.id;
-        var query = _client.from('supplier_orders').delete().eq('order_id', id);
-        if (currentUserId != null) {
-          query = query.eq('user_id', currentUserId);
-        }
-        await query;
-        print('✅ [OrderRepo] Strike 3: Order $id deleted from supplier_orders.');
-      } catch (e) {
-        print('⚠️ [OrderRepo] Strike 3 (Delete supplier_orders) failed for $id: $e');
+        print('❌ [OrderRepo] Draft Strike 2 failed: $e');
       }
 
       return const Right(unit);
     } catch (e) {
-      print('❌ [OrderRepo] DELETE FAILED for $id: $e');
       return Left(Failure.fromException(e));
     }
   }
@@ -407,8 +498,8 @@ class WholesaleOrderRepositoryImpl {
       // 💾 1. Update local Drift DB FIRST — this makes the UI reactive immediately
       await (_db.update(_db.ordersTable)..where((t) => t.id.equals(id))).write(
         OrdersTableCompanion(
-          status: Value(status.name.toUpperCase()),
-          updatedAt: Value(DateTime.now()),
+          status: drift.Value(status.name.toUpperCase()),
+          updatedAt: drift.Value(DateTime.now()),
         ),
       );
       print('✅ [OrderRepo] Local status updated to ${status.name} for $id');

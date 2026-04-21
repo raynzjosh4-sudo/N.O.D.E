@@ -11,10 +11,14 @@ import 'core/theme/theme_provider.dart';
 import 'package:node_app/core/utils/responsive_size.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'features/home/presentation/pages/notifications/data/security_monitor_service.dart';
 import 'features/home/presentation/pages/notifications/widgets/security_lockdown_dialog.dart';
 import 'features/home/presentation/pages/notifications/presentation/providers/notification_providers.dart';
 import 'core/services/notification_service.dart';
+import 'features/records/presentation/records/pages/record_detail_page.dart';
+import 'features/records/presentation/providers/records_provider.dart';
+import 'dart:async';
 
 final class LoggerObserver extends ProviderObserver {
   @override
@@ -57,9 +61,14 @@ Future<void> main() async {
     // 🔥 Initialize Firebase
     await Firebase.initializeApp();
     debugPrint('🔥 [Main] Firebase initialized successfully');
+
+    // 🛰️ Initialize FCM Listeners & Permissions
+    await NotificationService.initFirebaseMessaging();
+
+    // 🌙 Register Background Message Handler
+    FirebaseMessaging.onBackgroundMessage(NotificationService.backgroundHandler);
   } catch (e) {
     debugPrint('⚠️ [Main] Firebase initialization skipped: $e');
-    debugPrint('   (Ensure you have run "flutterfire configure")');
   }
 
   try {
@@ -78,6 +87,12 @@ Future<void> main() async {
 
   final prefs = await SharedPreferences.getInstance();
 
+  // 🛡️ [Security] Global Error Handling for Production
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    debugPrint('🚨 [Global Error] ${details.exception}');
+  };
+
   runApp(
     ProviderScope(
       observers: [LoggerObserver()],
@@ -87,12 +102,54 @@ Future<void> main() async {
   );
 }
 
-class MyApp extends ConsumerWidget {
-  MyApp({super.key});
+class MyApp extends ConsumerStatefulWidget {
+  const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final router = ref.watch(routerProvider);
+  ConsumerState<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends ConsumerState<MyApp> {
+  StreamSubscription? _notificationSub;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // 🔔 [Notification Navigation] Listen for system-wide notification taps
+    _notificationSub = NotificationService.onNotificationTap.listen((payload) {
+      if (payload == null) return;
+
+      debugPrint('🎯 [App] Handling notification payload: $payload');
+
+      if (payload.startsWith('record_detail:')) {
+        final recordId = payload.split(':')[1];
+        // Find the record in the current state
+        final records = ref.read(recordsProvider);
+        try {
+          final record = records.items.firstWhere((r) => r.id == recordId);
+          // We use the root navigator to show the detail page
+          final navContext = rootNavigatorKey.currentContext;
+          if (navContext != null) {
+            RecordDetailPage.show(navContext, record: record);
+          }
+        } catch (e) {
+          debugPrint(
+            '⚠️ [App] Could not find record for navigation: $recordId',
+          );
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _notificationSub?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final themeMode = ref.watch(themeModeProvider);
 
     // 🛡️ [Security Monitor] Listen for real-time security alerts globally
@@ -109,9 +166,44 @@ class MyApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
-      routerConfig: router,
+      routerConfig: ref.watch(routerProvider),
       builder: (context, child) {
         SizeConfig.init(context);
+
+        // 🛡️ [Production] Custom Error Screen instead of Red Screen
+        ErrorWidget.builder = (details) {
+          return Material(
+            child: Container(
+              color: AppTheme.darkTheme.scaffoldBackgroundColor,
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.error_outline_rounded,
+                    color: Colors.redAccent,
+                    size: 48,
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Something went wrong',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'The application encountered an unexpected state. Please restart or contact support if this persists.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.white.withOpacity(0.5),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        };
+
         return child!;
       },
     );

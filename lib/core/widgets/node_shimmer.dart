@@ -1,63 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:shimmer/shimmer.dart';
 import 'package:node_app/core/utils/responsive_size.dart';
-import '../theme/app_theme.dart';
+import 'package:node_app/core/widgets/shimmer/shimmer_core.dart';
 
-/// A unified Shimmer wrapper that applies a single animation to its entire child tree.
-/// Use this to prevent 'lines' caused by multiple unaligned shimmer animations.
-class NodeShimmerCore extends StatelessWidget {
-  final Widget child;
-  const NodeShimmerCore({super.key, required this.child});
+export 'package:node_app/core/widgets/shimmer/shimmer_core.dart';
 
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Shimmer.fromColors(
-      baseColor: isDark
-          ? colors.borderLight.withOpacity(0.1)
-          : Colors.grey[300]!,
-      highlightColor: isDark
-          ? colors.borderLight.withOpacity(0.2)
-          : Colors.grey[100]!,
-      period: const Duration(milliseconds: 1500),
-      child: child,
-    );
-  }
-}
-
-/// A simple 'ghost' block that takes the shimmer effect from its parent [NodeShimmerCore].
-class NodeShimmerBlock extends StatelessWidget {
-  final double? width;
-  final double height;
-  final double borderRadius;
-  final BoxShape shape;
-
-  const NodeShimmerBlock({
-    super.key,
-    this.width,
-    required this.height,
-    this.borderRadius = 8,
-    this.shape = BoxShape.rectangle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: width ?? double.infinity,
-      height: height,
-      decoration: BoxDecoration(
-        color: Colors.white, // Color doesn't matter, shimmer highlight covers it
-        borderRadius: shape == BoxShape.circle ? null : BorderRadius.circular(borderRadius),
-        shape: shape,
-      ),
-    );
-  }
-}
-
-class CategorySkeleton extends StatelessWidget {
-  const CategorySkeleton({super.key});
+class FeaturedCategorySkeleton extends StatelessWidget {
+  const FeaturedCategorySkeleton({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -66,7 +14,7 @@ class CategorySkeleton extends StatelessWidget {
         height: 280.h,
         padding: EdgeInsets.all(24.w),
         decoration: BoxDecoration(
-          color: Colors.transparent, // Background should be transparent to show shimmer
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(28.r),
         ),
         child: Column(
@@ -78,6 +26,43 @@ class CategorySkeleton extends StatelessWidget {
             NodeShimmerBlock(height: 14.h, width: 90.w, borderRadius: 4.r),
             SizedBox(height: 24.h),
             NodeShimmerBlock(height: 48.h, borderRadius: 24.r),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class CategorySkeleton extends StatelessWidget {
+  const CategorySkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return NodeShimmerCore(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
+        child: Row(
+          children: [
+            // Circular icon
+            NodeShimmerBlock(
+              height: 36.h,
+              width: 36.w,
+              shape: BoxShape.circle,
+            ),
+            SizedBox(width: 16.w),
+            // Title and subtitle
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  NodeShimmerBlock(height: 16.h, width: 120.w, borderRadius: 4.r),
+                  SizedBox(height: 6.h),
+                  NodeShimmerBlock(height: 12.h, width: 80.w, borderRadius: 4.r),
+                ],
+              ),
+            ),
+            // Right tag/chevron
+            NodeShimmerBlock(height: 20.h, width: 40.w, borderRadius: 12.r),
           ],
         ),
       ),

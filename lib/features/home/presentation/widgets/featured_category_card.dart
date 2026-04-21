@@ -78,10 +78,10 @@ class _FeaturedCategoryCardState extends ConsumerState<FeaturedCategoryCard> {
           ),
         );
       },
-      loading: () => const CategorySkeleton(),
+      loading: () => const FeaturedCategorySkeleton(),
       error: (e, st) => NodeErrorState(
         error: e,
-        onRetry: () => ref.read(categoryNotifierProvider.notifier).refresh(),
+        onRetry: () => ref.read(categoryPaginatedProvider(null).notifier).fetch(isRefresh: true),
         compact: true,
       ),
     );

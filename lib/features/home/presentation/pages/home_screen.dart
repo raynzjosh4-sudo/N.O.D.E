@@ -36,6 +36,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   bool _isSearching = false;
   late ScrollController _scrollController;
+  late TextEditingController _searchController;
   bool _isLoading = false;
 
   @override
@@ -43,6 +44,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     super.initState();
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
+    _searchController = TextEditingController();
 
     _loadMore(); // Initial load
 
@@ -123,6 +125,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   void _handleSearch(String query) {
     if (query.isEmpty) return;
+    _searchController.text = query;
 
     // 1. Save to cloud/local history
     final userId =
@@ -139,6 +142,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -202,6 +206,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16.0.w),
                   child: HomeSearchBar(
+                    controller: _searchController,
                     onTap: () => setState(() => _isSearching = true),
                     onChanged: _onSearchChanged,
                     onSubmitted: _handleSearch,
@@ -282,61 +287,147 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               });
                             }
 
-                            return CustomScrollView(
-                              physics: const AlwaysScrollableScrollPhysics(),
-                              controller: _scrollController,
-                              key: ValueKey('home_content'),
-                              slivers: [
-                                SliverToBoxAdapter(
-                                  child: Center(
-                                    child: ConstrainedBox(
-                                      constraints: const BoxConstraints(
-                                        maxWidth: 1200,
-                                      ),
-                                      child: Padding(
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: 16.0.w,
-                                          vertical: 8.h,
-                                        ),
-                                        child: PromoBanners(),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                // Removed duplicate suppliers header
-                                SliverToBoxAdapter(
-                                  child: Center(
-                                    child: ConstrainedBox(
-                                      constraints: const BoxConstraints(
-                                        maxWidth: 1200,
-                                      ),
-                                      child: Padding(
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: 16.0.w,
-                                        ),
-                                        child: QuickSelectionsList(),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                SliverToBoxAdapter(
-                                  child: SizedBox(height: 16.h),
-                                ),
-                                featuredCategorySection(colors),
-                                SliverToBoxAdapter(
-                                  child: SizedBox(height: 8.h),
-                                ),
-                                popularSection(colors),
-                                SliverToBoxAdapter(
-                                  child: SizedBox(height: 8.h),
-                                ),
-                                _buildProductGrid(context, ref),
+                            final searchQuery = ref.watch(
+                              inventorySearchQueryProvider,
+                            );
+                            final isSearchingQuery =
+                                searchQuery != null && searchQuery.isNotEmpty;
 
-                                _buildLoadingIndicator(ref),
-                                SliverToBoxAdapter(
-                                  child: SizedBox(height: 12.h),
+                            return Center(
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                  maxWidth: 1200,
                                 ),
-                              ],
+                                child: CustomScrollView(
+                                  physics:
+                                      const AlwaysScrollableScrollPhysics(),
+                                  controller: _scrollController,
+                                  key: ValueKey('home_content'),
+                                  slivers: [
+                                    if (isSearchingQuery)
+                                      SliverToBoxAdapter(
+                                        child: Center(
+                                          child: ConstrainedBox(
+                                            constraints: const BoxConstraints(
+                                              maxWidth: 1200,
+                                            ),
+                                            child: Padding(
+                                              padding: EdgeInsets.fromLTRB(
+                                                16.w,
+                                                16.h,
+                                                16.w,
+                                                8.h,
+                                              ),
+                                              child: GestureDetector(
+                                                onTap: () {
+                                                  _searchController.clear();
+                                                  ref
+                                                      .read(
+                                                        inventorySearchQueryProvider
+                                                            .notifier,
+                                                      )
+                                                      .set('');
+                                                },
+                                                child: Container(
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: 16.w,
+                                                    vertical: 12.h,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: theme.primaryColor
+                                                        .withOpacity(0.1),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          16.r,
+                                                        ),
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      Icon(
+                                                        Icons
+                                                            .arrow_back_rounded,
+                                                        size: 16.w,
+                                                        color:
+                                                            theme.primaryColor,
+                                                      ),
+                                                      SizedBox(width: 8.w),
+                                                      Text(
+                                                        'Back to Explore',
+                                                        style:
+                                                            GoogleFonts.outfit(
+                                                              fontSize: 13.sp,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              color: theme
+                                                                  .primaryColor,
+                                                            ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    if (!isSearchingQuery) ...[
+                                      SliverToBoxAdapter(
+                                        child: Center(
+                                          child: ConstrainedBox(
+                                            constraints: const BoxConstraints(
+                                              maxWidth: 1200,
+                                            ),
+                                            child: Padding(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 16.0.w,
+                                                vertical: 8.h,
+                                              ),
+                                              child: PromoBanners(),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      // Removed duplicate suppliers header
+                                      SliverToBoxAdapter(
+                                        child: Center(
+                                          child: ConstrainedBox(
+                                            constraints: const BoxConstraints(
+                                              maxWidth: 1200,
+                                            ),
+                                            child: Padding(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 16.0.w,
+                                              ),
+                                              child: QuickSelectionsList(),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      SliverToBoxAdapter(
+                                        child: SizedBox(height: 16.h),
+                                      ),
+                                      featuredCategorySection(colors),
+                                    ],
+                                    SliverToBoxAdapter(
+                                      child: SizedBox(height: 8.h),
+                                    ),
+                                    if (!isSearchingQuery)
+                                      popularSection(colors),
+                                    SliverToBoxAdapter(
+                                      child: SizedBox(height: 8.h),
+                                    ),
+                                    _buildProductGrid(context, ref),
+
+                                    _buildLoadingIndicator(ref),
+                                    SliverToBoxAdapter(
+                                      child: SizedBox(height: 12.h),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             );
                           },
                         ),
@@ -357,9 +448,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           padding: EdgeInsets.symmetric(horizontal: 16.0.w),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              featuredCategoryCard(),
-            ],
+            children: [featuredCategoryCard()],
           ),
         ),
       ),

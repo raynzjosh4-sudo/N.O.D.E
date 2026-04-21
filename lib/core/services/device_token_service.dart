@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,15 +12,23 @@ class DeviceTokenService {
 
   DeviceTokenService(this._supabase);
 
-  /// Retrieves the operating system as the device_type.
+  /// Retrieves the operating system as the device_type using foundation to be web-safe.
   String _getDeviceType() {
     if (kIsWeb) return 'web';
-    if (Platform.isAndroid) return 'android';
-    if (Platform.isIOS) return 'ios';
-    if (Platform.isWindows) return 'windows';
-    if (Platform.isMacOS) return 'macos';
-    if (Platform.isLinux) return 'linux';
-    return 'unknown';
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        return 'android';
+      case TargetPlatform.iOS:
+        return 'ios';
+      case TargetPlatform.windows:
+        return 'windows';
+      case TargetPlatform.macOS:
+        return 'macos';
+      case TargetPlatform.linux:
+        return 'linux';
+      default:
+        return 'unknown';
+    }
   }
 
   /// Syncs the actual Firebase Cloud Messaging (FCM) token to Supabase.
@@ -29,7 +36,7 @@ class DeviceTokenService {
   Future<void> syncDeviceToken(String userId) async {
     try {
       debugPrint('📡 [DeviceTokenService] Requesting FCM permission...');
-      
+
       // 1. Request Permission
       final settings = await FirebaseMessaging.instance.requestPermission(
         alert: true,
@@ -45,7 +52,7 @@ class DeviceTokenService {
       // 2. Fetch the FCM token
       debugPrint('📡 [DeviceTokenService] Fetching FCM token...');
       final fcmToken = await FirebaseMessaging.instance.getToken();
-      
+
       if (fcmToken == null) {
         debugPrint('❌ [DeviceTokenService] FCM Token is null');
         return;
@@ -53,7 +60,9 @@ class DeviceTokenService {
 
       final deviceType = _getDeviceType();
 
-      debugPrint('📡 [DeviceTokenService] Syncing token to cloud for user: $userId');
+      debugPrint(
+        '📡 [DeviceTokenService] Syncing token to cloud for user: $userId',
+      );
 
       // 3. Sync token to user_tokens table.
       // We check if a row exists first, then insert or update to avoid
@@ -84,7 +93,9 @@ class DeviceTokenService {
         });
       }
 
-      debugPrint('✅ [DeviceTokenService] FCM Token synced successfully: ${fcmToken.substring(0, 10)}...');
+      debugPrint(
+        '✅ [DeviceTokenService] FCM Token synced successfully: ${fcmToken.substring(0, 10)}...',
+      );
     } catch (e) {
       debugPrint('❌ [DeviceTokenService] Failed to sync device token: $e');
     }

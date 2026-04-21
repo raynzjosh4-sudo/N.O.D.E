@@ -37,8 +37,8 @@ class NotificationCard extends StatelessWidget {
           return Icons.account_balance_wallet_rounded;
         case NotificationCategory.system:
           return Icons.sync_rounded;
-        case NotificationCategory.ai:
-          return Icons.auto_awesome_rounded;
+        case NotificationCategory.reminders:
+          return Icons.alarm_on_rounded;
         case NotificationCategory.messages:
           return Icons.shopping_bag_rounded; // Matches the bag icon in the ref
         default:
@@ -60,8 +60,8 @@ class NotificationCard extends StatelessWidget {
           return const Color(0xFF10B981); // Emerald/Teal
         case NotificationCategory.system:
           return const Color(0xFF00BCD4); // Cyan
-        case NotificationCategory.ai:
-          return const Color(0xFF00E5FF); // Bright AI Cyan
+        case NotificationCategory.reminders:
+          return const Color(0xFFFFC107); // Amber/Yellow
         case NotificationCategory.messages:
           return const Color(0xFF2196F3); // Blue
         default:

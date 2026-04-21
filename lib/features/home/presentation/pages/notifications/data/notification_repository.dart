@@ -8,18 +8,29 @@ class NotificationRepository {
 
   NotificationRepository(this._client);
 
-  /// Fetch notifications for the current authenticated user
-  Future<Either<Failure, List<NotificationItem>>> getNotifications() async {
+  /// Fetch notifications for the current authenticated user with pagination and filtering
+  Future<Either<Failure, List<NotificationItem>>> getNotifications({
+    int limit = 10,
+    int offset = 0,
+    String? category,
+  }) async {
     try {
       final userId = _client.auth.currentUser?.id;
       if (userId == null)
         return const Left(ServerFailure('User not authenticated'));
 
-      final response = await _client
+      var query = _client
           .from('notifications_table')
           .select()
-          .eq('user_id', userId)
-          .order('created_at', ascending: false);
+          .eq('user_id', userId);
+
+      if (category != null && category.toLowerCase() != 'all') {
+        query = query.eq('category', category.toLowerCase());
+      }
+
+      final response = await query
+          .order('created_at', ascending: false)
+          .range(offset, offset + limit - 1);
 
       final List<dynamic> data = response as List;
       final notifications = data
@@ -56,6 +67,16 @@ class NotificationRepository {
           .from('notifications_table')
           .update({'is_unread': false})
           .eq('user_id', userId);
+      return const Right(unit);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  /// Delete a notification permanently
+  Future<Either<Failure, Unit>> deleteNotification(String id) async {
+    try {
+      await _client.from('notifications_table').delete().eq('id', id);
       return const Right(unit);
     } catch (e) {
       return Left(ServerFailure(e.toString()));

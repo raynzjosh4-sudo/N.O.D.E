@@ -33,13 +33,11 @@ class OrderDetailsPage extends ConsumerWidget {
     final dateFormat = DateFormat('MMMM dd, yyyy · HH:mm');
 
     // 🔄 Reactive Order Lookup: Ensures UI updates when status changes in the background
-    final ordersAsync = ref.watch(wholesaleOrdersProvider);
-    final currentOrder =
-        ordersAsync.whenOrNull(
-          data: (list) =>
-              list.firstWhere((o) => o.id == order.id, orElse: () => order),
-        ) ??
-        order;
+    final ordersState = ref.watch(wholesaleOrdersProvider);
+    final currentOrder = ordersState.items.firstWhere(
+      (o) => o.id == order.id,
+      orElse: () => order,
+    );
 
     // Fetch PDFs to find the linked one
     final pdfsAsync = ref.watch(userPdfsProvider);

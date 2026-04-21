@@ -6,7 +6,7 @@ enum NotificationCategory {
   security,
   finance,
   system,
-  ai,
+  reminders,
   messages,
 }
 

@@ -24,23 +24,29 @@ class CategoryRepositoryImpl implements ICategoryRepository {
 
   @override
   Future<Either<Failure, List<ProductCategory>>> getCategories({
+    String? parentId,
     int limit = 100,
     int offset = 0,
     bool forceRefresh = false,
   }) async {
     try {
       final localCategories = await localDataSource.getCategories(
+        parentId: parentId,
         limit: limit,
         offset: offset,
       );
 
       // Return cached if available, refresh in background
       if (localCategories.isNotEmpty && !forceRefresh) {
-        _refreshCategoriesInBackground(limit: limit, offset: offset);
+        _refreshCategoriesInBackground(parentId: parentId, limit: limit, offset: offset);
         return Right<Failure, List<ProductCategory>>(localCategories);
       }
 
-      final remoteCategoriesOrFailure = await _fetchAndCacheRemoteCategories(limit: limit, offset: offset);
+      final remoteCategoriesOrFailure = await _fetchAndCacheRemoteCategories(
+        parentId: parentId,
+        limit: limit,
+        offset: offset,
+      );
       return remoteCategoriesOrFailure.fold(
         (failure) {
           if (localCategories.isNotEmpty) {
@@ -63,10 +69,11 @@ class CategoryRepositoryImpl implements ICategoryRepository {
   }
 
   void _refreshCategoriesInBackground({
+    String? parentId,
     required int limit,
     required int offset,
   }) {
-    _fetchAndCacheRemoteCategories(limit: limit, offset: offset).catchError((
+    _fetchAndCacheRemoteCategories(parentId: parentId, limit: limit, offset: offset).catchError((
       e,
     ) {
       debugPrint('🏢 [CategoryRepo] Background refresh failed: $e');
@@ -75,11 +82,13 @@ class CategoryRepositoryImpl implements ICategoryRepository {
 
   Future<Either<Failure, List<ProductCategory>>>
   _fetchAndCacheRemoteCategories({
+    String? parentId,
     required int limit,
     required int offset,
   }) async {
     try {
       final remoteCategories = await remoteDataSource.getCategories(
+        parentId: parentId,
         limit: limit,
         offset: offset,
       );

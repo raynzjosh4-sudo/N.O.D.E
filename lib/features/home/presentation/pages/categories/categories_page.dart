@@ -5,6 +5,8 @@ import 'package:node_app/features/inventory/presentation/providers/category_noti
 import 'package:node_app/features/home/presentation/pages/categories/models/category_model.dart';
 import '../product_detail_screen.dart';
 import 'package:node_app/core/utils/responsive_size.dart';
+import 'package:node_app/core/widgets/node_shimmer.dart';
+import 'package:go_router/go_router.dart';
 
 class CategoriesPage extends ConsumerStatefulWidget {
   final CategoryItem? initialCategory;
@@ -14,29 +16,41 @@ class CategoriesPage extends ConsumerStatefulWidget {
   ConsumerState<CategoriesPage> createState() => _CategoriesPageState();
 }
 
+class _ProviderNotifier {
+  final WidgetRef ref;
+  _ProviderNotifier(this.ref);
+
+  Future<void> refresh() async {
+    // This provides legacy support or a way to refresh the root level
+    await ref.read(categoryPaginatedProvider(null).notifier).fetch(isRefresh: true);
+  }
+}
+
 class _CategoriesPageState extends ConsumerState<CategoriesPage> {
-  late List<CategoryItem> _currentCategories;
   final List<CategoryItem> _navigationStack = [];
+
+  String? get _currentParentId =>
+      _navigationStack.isEmpty ? null : _navigationStack.last.id;
 
   @override
   void initState() {
     super.initState();
     if (widget.initialCategory != null) {
       _navigationStack.add(widget.initialCategory!);
-      _currentCategories = widget.initialCategory!.subCategories;
-    } else {
-      _currentCategories = [];
     }
   }
 
   void _onCategoryTap(CategoryItem category) {
-    if (category.subCategories.isNotEmpty) {
+    if (category.itemCount == 0 && category.id.isNotEmpty) {
       setState(() {
         _navigationStack.add(category);
-        _currentCategories = category.subCategories;
       });
-    } else {
+    } else if (category.itemCount > 0) {
       _navigateToProducts(category);
+    } else {
+       setState(() {
+        _navigationStack.add(category);
+      });
     }
   }
 
@@ -67,14 +81,9 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
     if (_navigationStack.isNotEmpty) {
       setState(() {
         _navigationStack.removeLast();
-        if (_navigationStack.isEmpty) {
-          _currentCategories = ref.read(categoryNotifierProvider).value ?? [];
-        } else {
-          _currentCategories = _navigationStack.last.subCategories;
-        }
       });
     } else {
-      Navigator.pop(context);
+      context.pop();
     }
   }
 
@@ -82,30 +91,8 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final onSurface = theme.colorScheme.onSurface;
+    final categoryState = ref.watch(categoryPaginatedProvider(_currentParentId));
 
-    if (_navigationStack.isEmpty && widget.initialCategory == null) {
-       final asyncCategories = ref.watch(categoryNotifierProvider);
-       
-       return asyncCategories.when(
-         data: (categories) {
-           _currentCategories = categories;
-           return _buildContent(theme, onSurface);
-         },
-         loading: () => Scaffold(
-           backgroundColor: theme.scaffoldBackgroundColor,
-           body: const Center(child: CircularProgressIndicator()),
-         ),
-         error: (err, stack) => Scaffold(
-           backgroundColor: theme.scaffoldBackgroundColor,
-           body: Center(child: Text('Error loading categories: $err')),
-         ),
-       );
-    }
-    
-    return _buildContent(theme, onSurface);
-  }
-
-  Widget _buildContent(ThemeData theme, Color onSurface) {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
@@ -155,8 +142,6 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
                           _buildBreadcrumb('All', () {
                             setState(() {
                               _navigationStack.clear();
-                              _currentCategories =
-                                  ref.read(categoryNotifierProvider).value ?? [];
                             });
                           }),
                           for (int i = 0; i < _navigationStack.length; i++) ...[
@@ -171,8 +156,6 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
                                 for (int j = 0; j < count; j++) {
                                   _navigationStack.removeLast();
                                 }
-                                _currentCategories =
-                                    _navigationStack.last.subCategories;
                               });
                             }),
                           ],
@@ -184,25 +167,103 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
               ),
             ),
 
-            // ── WhatsApp Style Category List ───────────────────────────────
+            // ── Paginated Category List ───────────────────────────────
             Expanded(
-              child: ListView.separated(
-                padding: EdgeInsets.only(bottom: 40.h),
-                itemCount: _currentCategories.length,
-                separatorBuilder: (context, index) => Divider(
-                  height: 1.h,
-                  thickness: 1,
-                  indent: 68,
-                  color: onSurface.withOpacity(0.05),
-                ),
-                itemBuilder: (context, index) {
-                  final cat = _currentCategories[index];
-                  return _buildCategoryListTile(cat);
-                },
-              ),
+              child: categoryState.items.isEmpty && categoryState.isLoading
+                  ? _buildLoadingState()
+                  : categoryState.items.isEmpty
+                      ? _buildEmptyState(onSurface)
+                      : NotificationListener<ScrollNotification>(
+                          onNotification: (notification) {
+                            if (notification is ScrollEndNotification &&
+                                notification.metrics.extentAfter < 300) {
+                              ref
+                                  .read(categoryPaginatedProvider(_currentParentId).notifier)
+                                  .loadMore();
+                            }
+                            return false;
+                          },
+                          child: ListView.separated(
+                            padding: EdgeInsets.only(bottom: 40.h),
+                            itemCount: categoryState.items.length + (categoryState.hasMore ? 1 : 0),
+                            separatorBuilder: (context, index) => Divider(
+                              height: 1.h,
+                              thickness: 1,
+                              indent: 68,
+                              color: onSurface.withOpacity(0.05),
+                            ),
+                            itemBuilder: (context, index) {
+                              if (index >= categoryState.items.length) {
+                                return const CategorySkeleton();
+                              }
+                              final cat = categoryState.items[index];
+                              return _buildCategoryListTile(cat);
+                            },
+                          ),
+                        ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return ListView.builder(
+      itemCount: 10,
+      itemBuilder: (context, index) => const CategorySkeleton(),
+    );
+  }
+
+  Widget _buildEmptyState(Color onSurface) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.folder_open_rounded,
+            size: 48.w,
+            color: onSurface.withOpacity(0.1),
+          ),
+          SizedBox(height: 16.h),
+          Text(
+            'No sub-categories found here',
+            style: GoogleFonts.outfit(
+              color: onSurface.withOpacity(0.4),
+            ),
+          ),
+          SizedBox(height: 24.h),
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                _navigationStack.clear();
+              });
+            },
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+              decoration: BoxDecoration(
+                color: theme.primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(24.r),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                   Icon(Icons.home_rounded, size: 16.w, color: theme.primaryColor),
+                   SizedBox(width: 8.w),
+                   Text(
+                    'Back to Explore',
+                    style: GoogleFonts.outfit(
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.bold,
+                      color: theme.primaryColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -227,15 +288,11 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
   Widget _buildCategoryListTile(CategoryItem category) {
     final theme = Theme.of(context);
     final onSurface = theme.colorScheme.onSurface;
-    final isLeaf = category.subCategories.isEmpty;
+    final isLeaf = category.itemCount > 0;
 
-    String subPreview = '';
-    if (!isLeaf) {
-      subPreview = category.subCategories.map((c) => c.name).take(3).join(', ');
-      if (category.subCategories.length > 3) subPreview += '...';
-    } else {
-      subPreview = '${category.itemCount} Items currently available';
-    }
+    String subtitle = isLeaf
+        ? '${category.itemCount} Items available'
+        : 'Tap to explore sub-categories';
 
     return ListTile(
       dense: true,
@@ -261,7 +318,7 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
         ),
       ),
       subtitle: Text(
-        subPreview,
+        subtitle,
         style: GoogleFonts.plusJakartaSans(
           fontSize: 12.sp,
           color: onSurface.withOpacity(0.5),
@@ -295,6 +352,7 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
   }
 
   ImageProvider _getImageProvider(String url) {
+    if (url.isEmpty) return const AssetImage('assets/images/placeholder.png');
     if (url.startsWith('assets/')) {
       return AssetImage(url);
     }

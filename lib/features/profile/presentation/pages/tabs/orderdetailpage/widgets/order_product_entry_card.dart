@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:node_app/core/utils/responsive_size.dart';
 import 'package:node_app/features/profile/domain/entities/wholesale_order.dart';
 
@@ -25,12 +26,38 @@ class OrderProductEntryCard extends StatelessWidget {
           // Image
           ClipRRect(
             borderRadius: BorderRadius.circular(12.r),
-            child: Image.network(
-              entry.savedProduct.product.imageUrl,
-              width: 56.w,
-              height: 56.h,
-              fit: BoxFit.cover,
-            ),
+            child: entry.savedProduct.product.imageUrl.isNotEmpty
+                ? CachedNetworkImage(
+                    imageUrl: entry.savedProduct.product.imageUrl,
+                    width: 56.w,
+                    height: 56.h,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => Container(
+                      width: 56.w,
+                      height: 56.h,
+                      color: onSurface.withOpacity(0.05),
+                    ),
+                    errorWidget: (context, url, error) => Container(
+                      width: 56.w,
+                      height: 56.h,
+                      color: onSurface.withOpacity(0.05),
+                      child: Icon(
+                        Icons.image_not_supported_rounded,
+                        size: 20.w,
+                        color: onSurface.withOpacity(0.2),
+                      ),
+                    ),
+                  )
+                : Container(
+                    width: 56.w,
+                    height: 56.h,
+                    color: onSurface.withOpacity(0.05),
+                    child: Icon(
+                      Icons.inventory_2_rounded,
+                      size: 20.w,
+                      color: onSurface.withOpacity(0.2),
+                    ),
+                  ),
           ),
           SizedBox(width: 16.w),
 

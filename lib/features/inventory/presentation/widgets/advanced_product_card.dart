@@ -7,23 +7,34 @@ class AdvancedProductCard extends StatelessWidget {
   final Product product;
   final VoidCallback? onAddTap;
 
-  const AdvancedProductCard({
-    super.key,
-    required this.product,
-    this.onAddTap,
-  });
+  const AdvancedProductCard({super.key, required this.product, this.onAddTap});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final appColors = AppColors.of(context);
-    
+
     // --- 👑 UI MATH: Calculating the Profit Engine ---
-    final sortedTiers = [...product.priceTiers]..sort((a, b) => a.minQuantity.compareTo(b.minQuantity));
-    final wholesalePrice = sortedTiers.isNotEmpty ? sortedTiers.first.price : product.srp * 0.7;
-    
-    final marginUgx = product.srp - wholesalePrice;
-    final roiPercent = ((product.srp - wholesalePrice) / wholesalePrice) * 100;
+    final sortedTiers = [...product.priceTiers]
+      ..sort((a, b) => a.minQuantity.compareTo(b.minQuantity));
+
+    // Wholesale: First tier with MOQ > 1, or fallback to retail
+    final wholesaleTier = sortedTiers.firstWhere(
+      (t) => t.minQuantity > 1,
+      orElse: () =>
+          sortedTiers.isNotEmpty ? sortedTiers.first : (null as dynamic),
+    );
+    final wholesalePrice = wholesaleTier?.price ?? product.srp * 0.8;
+
+    // Retail: Price for 1 unit
+    final retailTier = sortedTiers.firstWhere(
+      (t) => t.minQuantity == 1,
+      orElse: () => (null as dynamic),
+    );
+    final retailPrice = retailTier?.price ?? product.srp;
+
+    final marginUgx = retailPrice - wholesalePrice;
+    final roiPercent = ((retailPrice - wholesalePrice) / wholesalePrice) * 100;
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -42,12 +53,16 @@ class AdvancedProductCard extends StatelessWidget {
                     child: Container(
                       width: double.infinity,
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                        color: theme.colorScheme.surfaceContainerHighest
+                            .withOpacity(0.3),
                       ),
                       child: product.imageUrl.isNotEmpty
                           ? Image.network(product.imageUrl, fit: BoxFit.cover)
-                          : Icon(Icons.inventory_2_outlined, 
-                              size: 48.w, color: theme.colorScheme.primary.withOpacity(0.5)),
+                          : Icon(
+                              Icons.inventory_2_outlined,
+                              size: 48.w,
+                              color: theme.colorScheme.primary.withOpacity(0.5),
+                            ),
                     ),
                   ),
                 ),
@@ -56,7 +71,10 @@ class AdvancedProductCard extends StatelessWidget {
                   top: 12.h,
                   right: 12.w,
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 8.w,
+                      vertical: 4.h,
+                    ),
                     decoration: BoxDecoration(
                       color: appColors.marginGreen,
                       borderRadius: BorderRadius.circular(8.r),
@@ -87,74 +105,112 @@ class AdvancedProductCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    product.name,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      height: 1.2.h,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  SizedBox(height: 4.h),
-                  Text(
-                    product.brand.toUpperCase(),
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.5),
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  SizedBox(height: 12.h),
-                  
-                  // --- 📈 PRICING & ROI ---
+                  // --- 📈 PRICING SECTION (MOVE TO TOP) ---
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Wholesale from',
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: theme.colorScheme.onSurface.withOpacity(0.5),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            RichText(
+                              text: TextSpan(
+                                children: [
+                                  TextSpan(
+                                    text:
+                                        'UGX ${wholesalePrice.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')} ',
+                                    style: theme.textTheme.titleMedium?.copyWith(
+                                      color: theme.colorScheme.primary,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 18
+                                          .sp, // Slightly larger for prominence
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text:
+                                        '/ ${wholesaleTier?.minQuantity ?? 1}+ units',
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: theme.colorScheme.primary
+                                          .withOpacity(0.7),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 10.sp,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                          Text(
-                            '${wholesalePrice.toInt()} UGX',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              color: theme.colorScheme.primary,
-                              fontWeight: FontWeight.w900,
+                            SizedBox(height: 2.h),
+                            Text(
+                              'Retail UGX ${retailPrice.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: theme.colorScheme.primary.withOpacity(
+                                  0.6,
+                                ),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11.sp,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      // ROI INDICATOR
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-                        decoration: BoxDecoration(
-                          color: appColors.marginGreen.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(4.r),
+                          ],
                         ),
+                      ),
+                      // 🏢 SUPPLIER INITIAL BADGE
+                      Container(
+                        width: 28.w,
+                        height: 28.h,
+                        decoration: BoxDecoration(
+                          color:
+                              (product.brand.toLowerCase().startsWith('g') ||
+                                  product.brand.toLowerCase().contains('eagle'))
+                              ? const Color(0xFF0D9488)
+                              : const Color(0xFFEA580C),
+                          shape: BoxShape.circle,
+                        ),
+                        alignment: Alignment.center,
                         child: Text(
-                          '${roiPercent.toInt()}% ROI',
+                          product.brand.isNotEmpty
+                              ? product.brand[0].toUpperCase()
+                              : 'N',
                           style: TextStyle(
-                            color: appColors.marginGreen,
-                            fontSize: 10.sp,
-                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w900,
                           ),
                         ),
                       ),
                     ],
                   ),
-                  
+
+                  SizedBox(height: 8.h),
+
+                  Text(
+                    product.name,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 14.sp,
+                      height: 1.2.h,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: 2.h),
+                  Text(
+                    product.brand.toUpperCase(),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withOpacity(0.4),
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                      fontSize: 10.sp,
+                    ),
+                  ),
+
                   SizedBox(height: 12.h),
-                  
+
                   // --- 📏 MOQ PROGRESS ---
                   _buildMoqProgress(theme, appColors),
-                  
+
                   SizedBox(height: 12.h),
-                  
+
                   // --- 🛒 QUICK ADD ---
                   SizedBox(
                     width: double.infinity,
@@ -192,7 +248,7 @@ class AdvancedProductCard extends StatelessWidget {
     // 👑 TIER LOGIC: Progress toward next discount tier
     // For this demonstration, we'll assume a threshold of 100 units
     const double progress = 0.65; // Example 65% toward next tier
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -227,4 +283,3 @@ class AdvancedProductCard extends StatelessWidget {
     );
   }
 }
-

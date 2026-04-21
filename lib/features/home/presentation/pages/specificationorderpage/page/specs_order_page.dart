@@ -546,7 +546,8 @@ class _SpecsOrderSheetState extends ConsumerState<SpecsOrderSheet> {
             id: pdfId,
             userId: user.id,
             title: chosenName,
-            filePath: result.filePath,
+            bytes: result.bytes,
+            fileName: result.fileName,
             fileSize: result.fileSize,
           );
 
@@ -693,7 +694,8 @@ class _SpecsOrderSheetState extends ConsumerState<SpecsOrderSheet> {
                 id: pdfId,
                 userId: user.id,
                 title: autoPdfName,
-                filePath: pdfResult.filePath,
+                bytes: pdfResult.bytes,
+                fileName: pdfResult.fileName,
                 fileSize: pdfResult.fileSize,
               );
 
@@ -708,9 +710,7 @@ class _SpecsOrderSheetState extends ConsumerState<SpecsOrderSheet> {
             updatedAt: now,
           );
 
-          final result = await orderNotifier.saveOrder(
-            wholesaleOrder,
-          );
+          final result = await orderNotifier.saveOrder(wholesaleOrder);
 
           if (!mounted) return;
           result.fold(
@@ -723,7 +723,7 @@ class _SpecsOrderSheetState extends ConsumerState<SpecsOrderSheet> {
             (_) {
               // 🔔 Trigger Local Notification
               NotificationService.showConfirmationAlert(
-                title: 'Wholesale Order Created',
+                title: 'Order Created',
                 body:
                     'Your order for ${widget.productName} has been archived to Profile/Orders.',
                 payload: orderId,

@@ -13,7 +13,9 @@ dependencies:
 
   cupertino_icons: ^1.0.8
   flutter_riverpod: any
-  flutter_local_notifications: ^18.0.1
+  flutter_local_notifications: ^21.0.0
+  timezone: ^0.11.0
+  flutter_timezone: ^5.0.2
   riverpod_annotation: any
   provider: ^6.1.5
   drift: any
