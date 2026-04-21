@@ -12,34 +12,42 @@ class AuthService {
     try {
       debugPrint('👉 [Google Auth] Starting Google Sign-In flow...');
 
+      if (kIsWeb) {
+        debugPrint('👉 [Google Auth] Using Supabase OAuth redirect for Web...');
+        // On the web, we do a full page redirect instead of popup to bypass popup blockers.
+        // Supabase will automatically redirect back to the app and intercept the token.
+        await supabase.auth.signInWithOAuth(OAuthProvider.google);
+        // The browser will now navigate away, so we return null to the local Future.
+        return null;
+      }
+
       const webClientId =
           '959127069942-p625bddb7vket40arga1qajjo09o07da.apps.googleusercontent.com';
 
       if (!_isGoogleInitialized) {
-        debugPrint('👉 [Google Auth] Initializing GoogleSignIn instance...');
+        debugPrint('👉 [Google Auth] Initializing Google SignIn instance...');
         try {
           await GoogleSignIn.instance.initialize(serverClientId: webClientId);
         } catch (e) {
-          debugPrint(
-            '⚠️ [Google Auth] Initialize not supported on this platform: $e',
-          );
+          debugPrint('⚠️ [Google Auth] Initialize not supported: $e');
         }
         _isGoogleInitialized = true;
       }
 
-      // 1. Force the native Google account picker to open
+      // 1. Force the native Google account picker to open (Android/iOS/Desktop)
       debugPrint('👉 [Google Auth] Opening native account picker...');
+
       final GoogleSignInAccount? googleUser;
+
       try {
         googleUser = await GoogleSignIn.instance.authenticate();
       } on GoogleSignInException catch (e) {
         debugPrint('⚠️ [Google Auth] Exception: ${e.code} | $e');
-
-        // Return null ONLY if the user explicitly canceled. Otherwise rethrow to see the true crash!
-        if (e.code == GoogleSignInExceptionCode.canceled) {
-          return null;
-        }
+        if (e.code == GoogleSignInExceptionCode.canceled) return null;
         rethrow;
+      } catch (e) {
+        debugPrint('⚠️ [Google Auth] Raw Exception: $e');
+        return null;
       }
 
       if (googleUser == null) return null;
@@ -91,6 +99,12 @@ class AuthService {
     try {
       debugPrint('👉 [Google Auth] Attempting silent sign-in...');
 
+      if (kIsWeb) {
+        // Silent sign-in on web is handled by Supabase's automatic session restoration.
+        // We don't need to try silent Google identity since Supabase holds the JWT in local storage.
+        return null;
+      }
+
       const webClientId =
           '959127069942-p625bddb7vket40arga1qajjo09o07da.apps.googleusercontent.com';
 
@@ -98,15 +112,14 @@ class AuthService {
         try {
           await GoogleSignIn.instance.initialize(serverClientId: webClientId);
         } catch (e) {
-          debugPrint(
-            '⚠️ [Google Auth] Initialize not supported on this platform: $e',
-          );
+          debugPrint('⚠️ [Google Auth] Initialize not supported: $e');
         }
         _isGoogleInitialized = true;
       }
 
       final googleUser = await GoogleSignIn.instance
           .attemptLightweightAuthentication();
+
       if (googleUser != null) {
         debugPrint(
           '✅ [Google Auth] Silent detection SUCCESS: ${googleUser.email}',
@@ -134,21 +147,21 @@ class AuthService {
         await db.wipeAllData();
         debugPrint('✅ [Google Auth] Local database wiped successfully.');
       } catch (e) {
-        debugPrint('⚠️ [Google Auth] Database wipe failed (might be already closed): $e');
+        debugPrint(
+          '⚠️ [Google Auth] Database wipe failed (might be already closed): $e',
+        );
       }
 
       // 1. Sign out from Supabase (clears local session)
       await supabase.auth.signOut();
 
-      // 2. Clear Google Sign-In instance
-      // This is important so the next time user clicks "Login with Google"
-      // they get to pick an account again instead of auto-logging the old one.
-      try {
-        await GoogleSignIn.instance.signOut();
-      } catch (e) {
-        debugPrint(
-          '⚠️ [Google Auth] Google-specific signOut not supported on this platform: $e',
-        );
+      // 2. Clear Google Sign-In instance natively if not web
+      if (!kIsWeb) {
+        try {
+          await GoogleSignIn.instance.signOut();
+        } catch (e) {
+          debugPrint('⚠️ [Google Auth] Google-specific signOut failed: $e');
+        }
       }
 
       debugPrint('✅ [Google Auth] Successfully signed out.');
