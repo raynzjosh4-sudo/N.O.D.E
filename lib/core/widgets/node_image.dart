@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -29,12 +30,27 @@ class NodeImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final baseUrl = dotenv.env['R2_PUBLIC_URL'] ?? '';
-    
+
     // 🚀 THE MAGIC: Append Cloudflare transform parameters.
-    // w: target width
-    // q: target quality
-    // format=auto: Cloudflare will automatically serve WebP if the client supports it.
-    final optimizedUrl = "$baseUrl/$path?w=${(width ?? 800).toInt()}&q=$quality&format=auto";
+    // On web, we skip optimization to avoid potential CORS issues with the resizing proxy.
+    final optimizedUrl = kIsWeb
+        ? "$baseUrl/$path"
+        : "$baseUrl/$path?w=${(width ?? 800).toInt()}&q=$quality&format=auto";
+
+    if (kIsWeb) {
+      return Image.network(
+        optimizedUrl,
+        width: width,
+        height: height,
+        fit: fit,
+        errorBuilder: (context, error, stackTrace) =>
+            errorWidget ?? _buildDefaultError(),
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return placeholder ?? _buildDefaultPlaceholder();
+        },
+      );
+    }
 
     return CachedNetworkImage(
       imageUrl: optimizedUrl,
